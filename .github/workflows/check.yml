@@ -1,7 +1,7 @@
 name: check
 
-# 每个 PR / push 都跑一遍 main.splash 的语法体检。
-# 目的：维护者「默认全同意」地批 PR 时，至少语法这一关是机器把过的。
+# 每个 PR / push 都跑一遍 main.splash 的三道静态体检。
+# 目的：维护者「默认全同意」地批 PR 时，至少这几关是机器把过的。
 on:
   push:
   pull_request:
@@ -11,12 +11,19 @@ permissions:
   contents: read
 
 jobs:
-  brace:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: main.splash 语法体检
+
+      - name: 第一道 · 括号配平
         run: python tools/brace.py
+
+      - name: 第二道 · 控件引用一致性（引用不存在的控件会让整张卡片不渲染）
+        run: python tools/audit_widgets.py
+
+      - name: 第三道 · 全局状态声明（漏声明会让整张卡片空白且无报错）
+        run: python tools/audit_globals.py

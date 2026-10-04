@@ -38,9 +38,11 @@
 装好后，运行一个卡片的标准动作是：
 
 ```bash
-# 语法校验（改完 main.splash 必做；CI 也会跑这一关）
-python tools/brace.py                       # 自动定位主文件
-python tools/brace.py <path/to/main.splash> # 或指定文件；退出码 1 = 有问题
+# 静态体检三道（改完 main.splash 必做；CI 也会跑这三关）
+python tools/brace.py           # 1) 括号配平
+python tools/audit_widgets.py   # 2) 控件引用一致性（引用不存在的控件会让整张卡片不渲染且无报错）
+python tools/audit_globals.py   # 3) 全局状态声明（漏声明同上，界面一片空白）
+# 三道都是退出码 0 = 通过，1 = 有问题；也支持传文件路径
 
 # 启动卡片（card-host，端口自定，下面以 8136 为例）
 python <OctoScript-App-Design-Flow>/tools/octo run my-entry/morning-brief/bundle \

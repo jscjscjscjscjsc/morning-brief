@@ -214,11 +214,13 @@ let iv_to = ""
 let iv_sub = ""
 let iv_body = ""
 let iv_from = ""
+let iv_box = []
 
 // ===== 分段朗读 · 一段一段念，可以随时插话，之后从断点接着念 =====
 let rv_q = []
 let rv_i = 0
 let rv_on = false
+let rv_total = 14
 
 // ===== 跨源矛盾与更正 · 这份报第一次会认错 =====
 //   clash：同一期里，不同来源对同一件事的说法对不上（数字、口径）。
@@ -1309,12 +1311,18 @@ fn art_prompt(){
     "editorial news illustration ABOUT THIS STORY: " + raw + " -- dramatic but tasteful newspaper art, 16:9, no text, no letters, no watermark"
 }
 
+// 截到 n 个字符。
+// 不能用 to_chars()：它给的是每个字的代码点（数字），拼起来会变成一串数字，
+// 语音合成就会把「中文」念成「2001325991」。split("") 给的是单字符本身。
+// （另注意：字符串的 .len() 是字节数，不是字数。）
 fn art_cut(s, n){
     let out = ""
     let k = 0
-    for c in s.to_chars() {
-        if k < n { out = out + c }
-        k = k + 1
+    for c in s.split("") {
+        if c != "" {
+            if k < n { out = out + c }
+            k = k + 1
+        }
     }
     out
 }
@@ -3520,10 +3528,35 @@ fn rv_next(){
         sync_ui()
         return
     }
-    vc_say_now(rv_q[rv_i])
+    if !vc_tts {
+        rv_on = false
+        vc_note = "这台机器没有可用的语音合成"
+        sync_ui()
+        return
+    }
+    let t = art_cut(rv_q[rv_i], 150)
+    if t == "" {
+        rv_i = rv_i + 1
+        rv_next()
+        return
+    }
     vc_note = "正在念 · " + rv_text_line()
     sync_ui()
-    start_timeout(0.9, || rv_watch(14))
+    // 轮询上限按宿主报的时长算：一段 150 字的导语要念 30 秒左右，
+    // 写死轮数会把长段拦腰切断（每轮 0.9 秒）。
+    host.request("llm.speak", {text: t lang: "zh-CN"}, fn(r){
+        if !rv_on { return }
+        let secs = 4
+        if r.is_ok && r.data != nil {
+            let sv = r.data["seconds"]
+            if sv != nil { secs = sv }
+        }
+        let polls = 2 + floor(secs / 0.9)
+        if polls < 4 { polls = 4 }
+        if polls > 80 { polls = 80 }
+        rv_total = polls
+        start_timeout(0.9, || rv_watch(polls))
+    })
 }
 
 fn rv_watch(left){
@@ -3537,7 +3570,7 @@ fn rv_watch(left){
     // 原因：llm.speak 是异步的，第一轮查询时它可能还没开始播；
     // 而有的宿主根本不提供 llm.speaking，这时 playing 会一直是 false。
     // 加这个下限，最坏情况是每段都念满 1.8 秒才推进，也不会把整期跳着念完。
-    let waited = 14 - left
+    let waited = rv_total - left
     host.request("llm.speaking", {}, fn(r){
         if !rv_on { return }
         let playing = false
@@ -4616,8 +4649,8 @@ HostedView{width: Fill height: Fill
             // ---- 底部常驻条：左边是记忆与麦克风，右边是主编的形象和入口 ----
             View{width: Fill height: Fit flow: Right align: Align{x: 1.0 y: 1.0} spacing: 9 padding: Inset{left: 14 right: 14 bottom: 14 top: 6}
                 vc_pill_mic := PillBtn{visible: false text: "🎙" on_click: || vc_toggle()}
-                arc_pill := Label{width: 150 text: "" draw_text.color: #x9b968c draw_text.text_style.font_size: 9}
-                View{width: Fill height: 1}
+                arc_pill := Label{width: Fill height: Fit text: "" max_lines: 2 draw_text.color: #x9b968c draw_text.text_style.font_size: 9}
+                View{width: 8 height: 1}
                 // 主编的形象：纯 shader 画出来的小家伙，会呼吸、会眨眼、头顶有晨光
                 pet := View{width: 46 height: 46 show_bg: true
                     new_batch: true
