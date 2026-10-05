@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | 可运行最小原型 | OctoScript 卡片应用（`main.splash`，4805 行） | `my-entry/morning-brief/bundle/` |
 | 启动说明 | 本文件第三节 + 仓库 `README.md` | 本文档 |
-| 固定版本源码 | git 提交 `7f1af06` | 仓库 master 分支 |
+| 固定版本源码 | **tag `prelim-2026-10-05`**（`git checkout prelim-2026-10-05`） | 仓库 master 分支 |
 | 2–3 分钟演示 | **`video/晨报卡-初赛演示.mp4`**（2 分 40 秒，含中文语音讲解） | 本文件夹 |
 | 两张关键截图 | 4 张真实运行截图 | `screenshots/` + 仓库 bundle 内 |
 | 数据来源与限制 | 本文件第四节 | 本文档 |
@@ -45,13 +45,24 @@
 
 | 项 | 值 |
 | --- | --- |
-| 宿主 | OctoSense App Hub `card-host`（含 `llm` 服务） |
+| 宿主 | OctoSense App Hub `card-host`（含 `llm` 服务），官方仓库提交 `46d67e5` |
 | 开发流程工具 | `OctoScript-App-Design-Flow`（提供 `tools/octo`） |
 | 平台 | Windows（本机实测） |
-| 依赖 | 宿主提供的 `llm` 服务（大模型 + 画图能力） |
+| 依赖 | 宿主提供的 `llm` 服务（大模型 + 画图能力）；**语音能力需宿主补丁**（见 3.3） |
 
 > ⚠️ 官方运行环境不在本仓库内（官方仓库需单独获取）。
 > 下载地址与国内镜像命令见仓库 `07_官方仓库下载说明.md`。
+
+### 3.2.1 语音能力的宿主依赖（重要）
+
+作品的「主编说话 / 分段朗读 / 麦克风对话」需要宿主新增三个方法
+（`llm.speak` / `llm.speaking` / `llm.listen_*`）。官方的 `card-host` 默认没有它们。
+
+- **补丁位置**：`my-entry/patches/`（`host-voice.patch` + `host-voice-card-host.patch` + 说明）
+- **打补丁**：`cd <你的 OctoSense-App-Hub> && git apply <本仓库>/my-entry/patches/host-voice.patch`，然后重建 `card-host`
+- **不打补丁也不会崩**：应用启动时会探测宿主能力（`llm.speech`）。
+  没有语音能力时，**应用自动降级为纯键盘交互**，其余全部功能（取数、编辑部、头版、阅读页）不受影响。
+  这也是一处对「宿主能力缺失」的失败处理。
 
 ### 3.3 启动步骤
 

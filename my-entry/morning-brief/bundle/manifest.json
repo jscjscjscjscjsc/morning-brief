@@ -18,7 +18,8 @@
   "network": {
     "hosts": [
       "hn.algolia.com",
-      "www.techmeme.com"
+      "www.techmeme.com",
+      "news.ycombinator.com"
     ]
   },
   "schema": 1,
