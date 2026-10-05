@@ -1,0 +1,29 @@
+{
+  "agent": null,
+  "capabilities": [
+    "storage",
+    "net",
+    "images",
+    "llm"
+  ],
+  "compute": {
+    "instruction_budget": null,
+    "memory_bytes": null
+  },
+  "id": "morning-brief",
+  "integrity": {
+    "bundle_blake3": "3fae914a0f0ce3fe7733da10107eb01ef2981efddceb4842a83eea3fd2d1dca0"
+  },
+  "name": "Morning Brief",
+  "network": {
+    "hosts": [
+      "hn.algolia.com",
+      "www.techmeme.com"
+    ]
+  },
+  "schema": 1,
+  "storage": {
+    "max_bytes": null
+  },
+  "version": "0.1.0"
+}
