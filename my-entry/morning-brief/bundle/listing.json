@@ -18,21 +18,19 @@
   "screenshots": [
     "screenshots/01-intent.png",
     "screenshots/02-plan.png",
-    "screenshots/03-done.png"
+    "screenshots/03-done.png",
+    "screenshots/04-story.png"
   ],
   "icon": "assets/icon.svg",
   "platforms": [
-    "windows",
-    "linux",
-    "macos",
-    "android"
+    "windows"
   ],
   "publisher": {
     "name": "共创 (Gongchuang) — 小鞠老师",
-    "support": "https://github.com/jscjscjscjscjsc",
-    "privacy_policy_url": "https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5"
+    "support": "https://github.com/jscjscjscjscjsc/morning-brief/issues",
+    "privacy_policy_url": "https://github.com/jscjscjscjscjsc/morning-brief/blob/master/PRIVACY.md"
   },
-  "release_notes": "第 34 轮：把出报过程摊开，让这一期可以被复盘。① 出报链路留痕 —— 每期把候选池、三位初审的原话、主编终审的导语与取舍理由、砍掉的三条写进本机 trail.json（留最近三期），结果页新增「回放」卡，一眼看清这一期是怎么做出来的。零额外大模型调用（都是本来就要落盘的数据）。② 编辑部宪法 —— 9 处散落的模型指令抽成带版本号的集中方针表（judge 已到 v2），版本号随出报一起落盘，可倒推、可 A/B。③ 新增主编工具 read_trail（回放过程）与 read_charter（念编辑方针），工具数 20 → 22。",
+  "release_notes": "初赛版本：意图 → 主编先问一句 → 取数计划待批准 → 抓取 HN/TechMeme → 信源评级 → 三视角编辑部背靠背评审 → 主编终审 → 今日头版 → 结果页（淘汰率与信源构成公开）→ 阅读页（摘要 / AI 解读 / 线索时间轴 / 追问信）。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

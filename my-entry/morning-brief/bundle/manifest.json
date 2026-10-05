@@ -4,7 +4,6 @@
     "storage",
     "net",
     "images",
-    "web",
     "llm"
   ],
   "compute": {
@@ -13,7 +12,7 @@
   },
   "id": "morning-brief",
   "integrity": {
-    "bundle_blake3": "d26c2599cc36de0c3c9078920badd1f0193a2cb924c4dad5d68f589234481e57"
+    "bundle_blake3": "3fae914a0f0ce3fe7733da10107eb01ef2981efddceb4842a83eea3fd2d1dca0"
   },
   "name": "Morning Brief",
   "network": {
