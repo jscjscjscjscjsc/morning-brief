@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | 可运行最小原型 | OctoScript 卡片应用（`main.splash`，4805 行） | `my-entry/morning-brief/bundle/` |
 | 启动说明 | 本文件第三节 + 仓库 `README.md` | 本文档 |
-| 固定版本源码 | **tag `prelim-2026-10-05`**（`git checkout prelim-2026-10-05`） | 仓库 master 分支 |
+| 固定版本源码 | **tag `prelim-2026-10-06`**（`git checkout prelim-2026-10-06`） | 仓库 master 分支 |
 | 2–3 分钟演示 | **`video/晨报卡-初赛演示.mp4`**（2 分 40 秒，含中文语音讲解） | 本文件夹 |
 | 两张关键截图 | 4 张真实运行截图 | `screenshots/` + 仓库 bundle 内 |
 | 数据来源与限制 | 本文件第四节 | 本文档 |
