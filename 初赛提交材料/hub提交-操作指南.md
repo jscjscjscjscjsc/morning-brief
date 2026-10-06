@@ -56,6 +56,33 @@
 
 ---
 
+## 二·补、跨平台摘要陷阱（务必先读）
+
+**官方 `digest_dir` 在 Windows 与 Linux 上算出的摘要不同**（官方 issue #75 记录了此缺陷，
+修复 PR #79 尚未合并）。原因：路径用 `to_string_lossy()` 进哈希，Windows 给 `assets\icon.svg`、
+Linux 给 `assets/icon.svg`。
+
+后果：在 Windows 上 `hub stamp` 写的摘要，官方在 Linux 验证时会直接拒绝。
+
+**我们的处理**：提交的 manifest 写 **Linux（正斜杠）版摘要**，用仓库内工具设置：
+
+```bash
+python tools/portable_digest.py          # 写入跨平台摘要
+python tools/portable_digest.py --check  # 只检查（提交前跑一次）
+```
+
+**两个陷阱：**
+
+1. 本地用 `card-host --stamp` 启动时，会**把摘要改回 Windows 版** → 每次本地测试后、
+   提交前都要重新跑 `python tools/portable_digest.py`。
+2. `hub stamp`（未打补丁的官方版）同样写回 Windows 摘要 → 提交前不要跑它。
+
+验证用**打了修复补丁的 hub**（把 PR #79 cherry-pick 到最新 main 后构建）：
+
+```
+morning-brief 0.1.0 — PASSED     ← 用正斜杠摘要验证通过
+```
+
 ## 三、提交前的完整检查清单（逐条已跑通）
 
 ```bash
