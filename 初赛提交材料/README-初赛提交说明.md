@@ -35,11 +35,16 @@
 
 **OctoSense App Hub 卡片包**（OctoScript 应用）。
 
-- 程序：`bundle/main.splash`（唯一的程序文件，OctoScript / splash 脚本）
-- 清单：`bundle/manifest.json`
-- 上架信息：`bundle/listing.json`
-- 图标：`bundle/assets/icon.svg`
-- 截图：`bundle/screenshots/`（4 张实机捕获）
+**权威位置**：`my-entry/morning-brief/bundle/`（这是被 `hub check` 校验、被宿主加载的那一份）
+**本文件夹的副本**：`初赛提交材料/bundle/`（内容与上面完全一致，方便单独取用）
+
+| 文件 | 说明 |
+| --- | --- |
+| `main.splash` | 唯一的程序文件（OctoScript / splash 脚本，约 4800 行） |
+| `manifest.json` | 清单：id / 版本 / 能力 / 网络白名单 / bundle 摘要 |
+| `listing.json` | 上架信息：副标题 / 描述 / 关键词 / 截图 / 发布者 |
+| `assets/icon.svg` | 图标 |
+| `screenshots/` | 4 张实机捕获的截图 |
 
 ### 3.2 运行环境
 

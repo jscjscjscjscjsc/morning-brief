@@ -171,7 +171,8 @@ let fc_note = ""
 let fc_hist = []
 let fc_hit = 0
 let fc_miss = 0
-let fc_open = 0
+// 待对账的预测列表（数组）。曾误声明为 0，导致 .len() 在数字上调用而报错。
+let fc_open = []
 
 // ===== 常驻主编的形象 · 纯代码绘制，不依赖任何外部图片或字体 =====
 let pet_mood = "idle"
