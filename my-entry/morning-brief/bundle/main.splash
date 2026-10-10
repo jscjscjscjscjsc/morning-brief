@@ -1,5 +1,5 @@
 // 晨报卡 v2 — AI 主编
-// 官方技术栈：OctoSense App Hub 的 card-host + splash 脚本 + 宿主大模型服务（llm）
+// 官方技术栈：OctoSense App Hub 的 card-host + splash 脚本 + 宿主模型服务（model.complete）
 // 说明：新闻只来自公开来源；标题原样呈现；是否让 AI 参与由用户在计划页批准。
 
 // =====================================================================
@@ -76,6 +76,8 @@ let ai_intro = ""
 let ai_note = ""
 let ai_model = ""
 let ai_ms = 0
+let ai_t0 = 0
+let ag_t0 = 0
 let ai_tokens = 0
 let ai_think = ""
 let ai_whys = []
@@ -91,6 +93,7 @@ let story_more = []
 let story_comments = []
 let story_ai = ""
 let story_ms = 0
+let story_t0 = 0
 let story_err = ""
 let art_url = ""
 let art_on = false
@@ -141,7 +144,7 @@ let ag_used = 0
 let ag_prev = ""
 let ag_last_user = ""
 
-// ===== 语音层 · 让主编说得出、听得见（能力由宿主提供，见 llm.speech） =====
+// ===== 语音层 · 让主编说得出、听得见（宿主语音服务，见 llm.speech；宿主不提供则降级为状态提示） =====
 let vc_tts = false
 let vc_stt = false
 let vc_voices = 0
@@ -149,8 +152,10 @@ let vc_auto = true
 let vc_listen = false
 let vc_partial = ""
 let vc_heard = ""
-let vc_note = ""
+let vc_note = "本机未启用语音：这份应用没有申请 llm 能力，说话与收听都走文字。"
 let vc_last_voice = false
+// 轮询连续失败计数：拿不到识别结果时不能一直空转，也要说得出话。
+let vc_poll_fail = 0
 
 // ===== 读者画像 · 这份晨报只为一个人编 =====
 let pf_briefs = 0
@@ -803,6 +808,21 @@ fn row_img(r){
     v
 }
 
+// model.complete answers {output, meta:{class,requested,attempts,usage,budget}}.
+// The app never sees the provider or the model id, so the token count comes from
+// meta.usage and nothing else is reported.
+fn model_tokens(reply){
+    if reply == nil { return 0 }
+    let meta = reply.meta
+    if meta == nil { return 0 }
+    let usage = meta.usage
+    if usage == nil { return 0 }
+    let n = 0
+    if usage.input_tokens != nil { n = n + usage.input_tokens }
+    if usage.output_tokens != nil { n = n + usage.output_tokens }
+    n
+}
+
 fn seconds_text(ms){
     if ms <= 0 { return "" }
     "" + (floor(ms / 100) / 10) + " 秒"
@@ -846,13 +866,13 @@ fn intent_preview(){
 
 fn ai_line(){
     if ai_ready == -1 { return "正在检查 AI 主编…" }
-    if ai_ready == 0 { return "没接上 AI（这台机器没有配置模型钥匙）。仍可按主题筛选。" }
+    if ai_ready == 0 { return "没接上 AI 模型服务（本机没有可用的 AI 供应商配置）。仍可按主题筛选。" }
     "已接上「" + ai_model + "」，可由它挑选重点。"
 }
 
 fn ai_sum_line(){
     if phase == "fetching" { return "正在取数 · 官方 net 能力" }
-    if ai_on { return "AI 主编 · " + ai_model + " · 用时 " + seconds_text(ai_ms) + " · " + ai_tokens + " tokens" }
+    if ai_on { return "AI 主编 · 用时 " + seconds_text(ai_ms) + " · " + ai_tokens + " tokens" }
     if ai_state == "failed" { return "离线模式：AI 主编没有答复，已按你勾选的主题做规则筛选" }
     if ai_state == "restored" { return "这是上次由 AI 主编挑出的晨报" }
     "离线模式：没有调用 AI，按你勾选的主题做规则筛选"
@@ -868,10 +888,10 @@ fn src_line(){
 }
 
 fn pipe_text(){
-    if phase == "fetching" { return "官方能力 · 取数 net.http_request · 正在跑" + "\n" + "接下来交给 AI 主编（llm.chat）挑选重点" }
+    if phase == "fetching" { return "官方能力 · 取数 net.http_request · 正在跑" + "\n" + "接下来交给 AI 主编（model.complete）挑选重点" }
     if ai_state == "restored" { return "上次结果 · 本次没有重新取数" }
     let l1 = "官方能力 · 取数 net.http_request · 候选 " + cand_n + " 条"
-    let l2 = "官方能力 · 主编 llm.chat · 选 " + picked.len() + " 条 · 落地 fs.write"
+    let l2 = "官方能力 · 主编 model.complete · 选 " + picked.len() + " 条 · 落地 fs.write"
     if !ai_on { l2 = "官方能力 · 规则兜底筛选 · 选 " + picked.len() + " 条 · 落地 fs.write" }
     l1 + "\n" + l2
 }
@@ -1061,18 +1081,19 @@ fn story_ai_ask(){
             i = i + 1
         }
     }
-    host.request("llm.chat", {
-        system: "[编辑部宪法 story/" + charter_v("story") + "]
-你是一位科技晨报的解读编辑，读者是关心科技行业但不懂技术的普通人。用中文回答，写成两段共三到五句话，不要用任何符号排版，不要罗列，不要重复标题原文。第一段说清这件事到底发生了什么，第二段说清它为什么值得关心。如果给了网友讨论，最后点一句大家在争论什么。"
-        prompt: body
-        temperature: 0.3
-        max_tokens: 700
-        label: "brief.story"
+    story_t0 = time_now()
+    host.request("model.complete", {
+        task: "[编辑部宪法 story/" + charter_v("story") + "]
+你是一位科技晨报的解读编辑，读者是关心科技行业但不懂技术的普通人。用中文回答，写成两段共三到五句话，不要用任何符号排版，不要罗列，不要重复标题原文。第一段说清这件事到底发生了什么，第二段说清它为什么值得关心。如果给了网友讨论，最后点一句大家在争论什么。你的输出是一个 JSON 对象，text 字段就是这段解读正文。"
+        input: body
+        schema: {type: "object" required: ["text"] properties: {text: {type: "string"}}}
+        class: "strong"
+        allow_urls: true
     }, fn(r){
-        if r.is_ok && r.data != nil && r.data.text != nil && r.data.text != "" {
-            story_ai = r.data.text.trim()
+        if r.is_ok && r.data != nil && r.data.output.text != nil && r.data.output.text != "" {
+            story_ai = r.data.output.text.trim()
             story_state = "ok"
-            story_ms = r.data.elapsed_ms
+            story_ms = (time_now() - story_t0) * 1000
         } else {
             story_state = "fail"
             story_err = "AI 这次没有答复，上面几块是官方页面里的原文。"
@@ -1262,7 +1283,7 @@ fn art_go(){
     if story == nil { return }
     if art_q == "" { return }
     if art_pending == art_q {
-        if art_url != "" { art_on = true art_note = "配图已就绪" sync_ui() }
+        if art_url != "" { art_on = true art_busy = false if art_cached == 1 { art_note = "这条消息的配图来自本机缓存" } else { art_note = "配图已就绪" } sync_ui() }
         return
     }
     art_pending = art_q
@@ -1275,11 +1296,11 @@ fn art_go(){
     let cache = art_cached_for(story.id)
     if cache != "" {
         art_url = cache
-        art_on = true
-        art_busy = false
         art_cached = 1
-        art_note = "这条消息的配图来自本机缓存"
-        sync_ui()
+        art_busy = true
+        art_note = "正在读本机缓存，马上就好"
+        art_on = false
+        sync_ui() start_timeout(0.05, || art_go())
         return
     }
     art_cached = 0
@@ -1434,7 +1455,7 @@ fn vc_probe(){
                     if tv { vc_tts = true } else { vc_tts = false }
                 }
                 let vs = tts["voices"]
-                if vs != nil { vc_voices = vs.len() }
+                if vs != nil { vc_voices = vs.len() vc_voice = vc_pick_voice(vs) }
             }
             let stt = r.data["stt"]
             if stt != nil {
@@ -1452,10 +1473,23 @@ fn vc_probe(){
 }
 
 fn vc_say_now(text){
-    if !vc_tts { return }
+    if !vc_tts {
+        // 评审意见 3：语音层失败要给一行状态提示，不能静默返回。
+        vc_note = "这台机器没有可用的语音合成，念不出来；文字照常显示"
+        sync_ui()
+        return
+    }
     let t = art_cut(text, 150)
     if t == "" { return }
-    host.request("llm.speak", {text: t lang: "zh-CN"}, fn(r){})
+    host.request("llm.speak", {text: t lang: "zh-CN" voice: vc_voice}, fn(r){
+        // 播报失败也要看得见，别让读者以为这句话已经念过了。
+        if !r.is_ok {
+            let why = "语音播报失败"
+            if r.error != nil && r.error != "" { why = why + "：" + r.error }
+            vc_note = why + "。文字照常显示，其余功能不受影响"
+            sync_ui()
+        }
+    })
 }
 
 // 自动朗读只在「对主编说过话」的时候出声，不打搅只想看报的人。
@@ -1493,6 +1527,7 @@ fn vc_start(){
     }
     vc_partial = ""
     vc_heard = ""
+    vc_poll_fail = 0
     vc_note = "正在打开麦克风…"
     sync_ui()
     host.request("llm.listen_start", {language: "zh-CN"}, fn(r){
@@ -1512,57 +1547,83 @@ fn vc_stop(){
     vc_listen = false
     vc_note = "麦克风已关上"
     sync_ui()
-    host.request("llm.listen_stop", {}, fn(r){})
+    // 关麦的收尾统一走 vc_close_mic：失败会写回一行状态，不静默。
+    vc_close_mic()
 }
 
 fn vc_poll_go(){
     if !vc_listen { return }
     host.request("llm.listen_poll", {}, fn(r){
-        if r.is_ok && r.data != nil {
-            let evs = r.data["events"]
-            if evs != nil {
-                for e in evs {
-                    let kv = e["kind"]
-                    let k = ""
-                    if kv != nil { k = "" + kv }
-                    let tv = e["text"]
-                    let t = ""
-                    if tv != nil { t = "" + tv }
-                    if k == "partial" {
-                        vc_partial = t
-                        vc_note = "听到：" + t
-                    }
-                    if k == "final" && t != "" {
-                        vc_partial = ""
-                        vc_heard = t
-                        vc_listen = false
-                        vc_note = "已听到：" + t
-                        vc_last_voice = true
-                        if !ag_open { ag_open = true }
-                        // 插话：先停下朗读队列，再把手里的活交出去。
-                        // 队列不清空，所以读者说完还能从这一句接着往下念。
-                        if rv_on { rv_stop() }
-                        ag_say(t)
-                    }
-                    if k == "error" {
-                        vc_note = "语音识别停了：" + t
-                        vc_listen = false
-                    }
-                    if k == "ended" && vc_listen {
-                        vc_listen = false
-                        vc_note = "这一轮听完了"
+        if !r.is_ok {
+            // 轮询本身失败：计数，连错三次就停下并说明，不让界面假装还在听。
+            vc_poll_fail = vc_poll_fail + 1
+            if vc_poll_fail >= 3 {
+                vc_listen = false
+                let why = "语音识别中断了"
+                if r.error != nil && r.error != "" { why = why + "：" + r.error }
+                vc_note = why + "。可以重新点「说话」，或直接用文字"
+                sync_ui()
+            }
+        } else {
+            vc_poll_fail = 0
+            if r.data != nil {
+                let evs = r.data["events"]
+                if evs != nil {
+                    for e in evs {
+                        let kv = e["kind"]
+                        let k = ""
+                        if kv != nil { k = "" + kv }
+                        let tv = e["text"]
+                        let t = ""
+                        if tv != nil { t = "" + tv }
+                        if k == "partial" {
+                            vc_partial = t
+                            vc_note = "听到：" + t
+                        }
+                        if k == "final" && t != "" {
+                            vc_partial = ""
+                            vc_heard = t
+                            vc_listen = false
+                            vc_note = "已听到：" + t
+                            vc_last_voice = true
+                            if !ag_open { ag_open = true }
+                            // 插话：先停下朗读队列，再把手里的活交出去。
+                            // 队列不清空，所以读者说完还能从这一句接着往下念。
+                            if rv_on { rv_stop() }
+                            ag_say(t)
+                        }
+                        if k == "error" {
+                            vc_note = "语音识别停了：" + t
+                            vc_listen = false
+                        }
+                        if k == "ended" && vc_listen {
+                            vc_listen = false
+                            vc_note = "这一轮听完了"
+                        }
                     }
                 }
+                let live = r.data["live"]
+                if live != nil && live == false && vc_listen {
+                    vc_listen = false
+                    vc_note = "这一轮听完了"
+                }
+                sync_ui()
             }
-            let live = r.data["live"]
-            if live != nil && live == false && vc_listen {
-                vc_listen = false
-                vc_note = "这一轮听完了"
-            }
-            sync_ui()
         }
         if vc_listen { start_timeout(0.4, || vc_poll_go()) }
-        else { host.request("llm.listen_stop", {}, fn(r2){}) }
+        else { vc_close_mic() }
+    })
+}
+
+// 关麦收尾：所有「这一轮结束」的路径共用这一处，失败就说出来，别静默。
+fn vc_close_mic(){
+    host.request("llm.listen_stop", {}, fn(r){
+        if !r.is_ok {
+            let why = "麦克风已关上，但宿主没能确认"
+            if r.error != nil && r.error != "" { why = why + "：" + r.error }
+            vc_note = why
+            sync_ui()
+        }
     })
 }
 
@@ -1995,22 +2056,20 @@ fn fc_kick(){
     }
     let intro = ai_intro
     if intro == "" { intro = "这一期没有导语" }
-    host.request("llm.chat", {
-        system: "[编辑部宪法 forecast/" + charter_v("forecast") + "]
+    host.request("model.complete", {
+        task: "[编辑部宪法 forecast/" + charter_v("forecast") + "]
 你是科技晨报的主编，现在要做两件事。第一，在报纸上公开发表三条预测：每一条都是未来一周内可以被事实检验的具体判断，不是模棱两可的评论，也不是对已发生事情的复述；text 是一句中文预测，不超过 40 字，watch 是一句验证口径，说清看到什么就算说中。第二，把这一期报到的三到五条硬事实记进 claims（每项一句中文，尽量带上具体数字、公司名或版本号）—— 那是本报自己的台账，下一期要拿它对账，所以只写你在本期标题里确实看到的，不要推测、不要补充。直接输出一个 JSON 对象，第一个字符就是 {，不要任何思考过程。"
-        prompt: "今天是 " + today_text() + "。\n本期导语：" + intro + "\n今日入选标题：\n" + lines + "\n请给出三条预测，并把本期报到的硬事实记进 claims。"
-        as_json: true
-        temperature: 0.4
-        max_tokens: 900
+        input: "今天是 " + today_text() + "。\n本期导语：" + intro + "\n今日入选标题：\n" + lines + "\n请给出三条预测，并把本期报到的硬事实记进 claims。"
         schema: fc_shape
-        label: "brief.forecast"
+        class: "strong"
+        allow_urls: true
     }, fn(r){
         let good = false
-        if r.is_ok && r.data != nil && r.data.data != nil && r.data.data.items != nil { good = true }
+        if r.is_ok && r.data != nil && r.data.output != nil && r.data.output.items != nil { good = true }
         if !good { fc_fallback() return }
         fc_items = []
         let k = 0
-        for it in r.data.data.items {
+        for it in r.data.output.items {
             if k < 3 {
                 let tx = it["text"]
                 let wt = it["watch"]
@@ -2029,7 +2088,7 @@ fn fc_kick(){
         }
         if fc_items.len() == 0 { fc_fallback() return }
         claims_new = []
-        let cw = r.data.data.claims
+        let cw = r.data.output.claims
         if cw != nil {
             let ck = 0
             for c in cw {
@@ -2085,25 +2144,23 @@ fn fc_review(){
         if j < 16 { tlist = tlist + "" + j + ". " + r.title + "\n" }
         j = j + 1
     }
-    host.request("llm.chat", {
-        system: "[编辑部宪法 forecast/" + charter_v("forecast") + "]
+    host.request("model.complete", {
+        task: "[编辑部宪法 forecast/" + charter_v("forecast") + "]
 你是晨报主编，正在为自己上一期公开发表的预测对账。逐条判断：今天的新标题里已经有明确证据支持它 = hit；已经有明确证据推翻它 = miss；还在进行中、或今天完全没有相关信息 = open。不要勉强下结论，没有证据就老实说 open。note 是一句中文说明，不超过 30 字。直接输出一个 JSON 对象，第一个字符就是 {。"
-        prompt: "待对账的预测：\n" + plist + "\n今天取到的新标题：\n" + tlist + "\n请逐条给出 verdict（只能是 hit / miss / open）和 note。"
-        as_json: true
-        temperature: 0
-        max_tokens: 1200
+        input: "待对账的预测：\n" + plist + "\n今天取到的新标题：\n" + tlist + "\n请逐条给出 verdict（只能是 hit / miss / open）和 note。"
         schema: fc_check_shape
-        label: "brief.forecast.check"
+        class: "fast"
+        allow_urls: true
     }, fn(r){
         let good = false
-        if r.is_ok && r.data != nil && r.data.data != nil && r.data.data.results != nil { good = true }
+        if r.is_ok && r.data != nil && r.data.output != nil && r.data.output.results != nil { good = true }
         if !good {
             fc_state = "ok"
             fc_note = "这一期没能对上账，下一期再试"
             sync_ui()
             return
         }
-        let results = r.data.data.results
+        let results = r.data.output.results
         let kept = []
         let done = []
         let k = 0
@@ -2259,21 +2316,19 @@ fn fact_kick(){
         k = k + 1
     }
     if clist == "" { clist = "（上一期没有留下待核对的硬事实：fixes 请返回空数组）" }
-    host.request("llm.chat", {
-        system: "[编辑部宪法 factcheck/" + charter_v("factcheck") + "]
+    host.request("model.complete", {
+        task: "[编辑部宪法 factcheck/" + charter_v("factcheck") + "]
 你是晨报主编，正在做两件核对工作，都要对自己狠一点。\n① clashes：今天的候选标题里，如果有两条讲的是同一件事、但关键数字或说法对不上（出货量、金额、日期、版本号、结论），把这一对挑出来，a 和 b 是候选序号，note 用一句中文说清分歧在哪、两边各是什么。如果没有任何两条指向同一件事，或者说法并不冲突，就返回空数组 —— 不要为了有东西而硬凑。\n② fixes：把上一期留下的硬事实与今天的新标题逐一比对。只有今天出现了明确证据推翻它的，才挑出来记一条，i 是事实序号，note 用一句中文说清新的说法是什么。今天没有消息、只是没被提到、或者略有出入但算不上推翻，一律不算，不要输出。\n直接输出一个 JSON 对象，第一个字符就是 {，不要任何思考过程。"
-        prompt: "今天是 " + today_text() + "。\n\n今天的候选标题（核对它们之间有没有互相矛盾的说法）：\n" + tlist + "\n上一期本报记下的硬事实（核对是否被今天推翻）：\n" + clist + "\n请给出 clashes 与 fixes 两个数组。"
-        as_json: true
-        temperature: 0
-        max_tokens: 1400
+        input: "今天是 " + today_text() + "。\n\n今天的候选标题（核对它们之间有没有互相矛盾的说法）：\n" + tlist + "\n上一期本报记下的硬事实（核对是否被今天推翻）：\n" + clist + "\n请给出 clashes 与 fixes 两个数组。"
         schema: fact_shape
-        label: "brief.factcheck"
+        class: "strong"
+        allow_urls: true
     }, fn(r){
         let good = false
-        if r.is_ok && r.data != nil && r.data.data != nil { good = true }
+        if r.is_ok && r.data != nil && r.data.output != nil { good = true }
         if !good { fact_fallback() return }
         clash = []
-        let cw = r.data.data.clashes
+        let cw = r.data.output.clashes
         if cw != nil {
             let n = 0
             for c in cw {
@@ -2293,7 +2348,7 @@ fn fact_kick(){
             }
         }
         fix = []
-        let fw = r.data.data.fixes
+        let fw = r.data.output.fixes
         if fw != nil {
             let m = 0
             for f in fw {
@@ -2711,8 +2766,7 @@ fn ag_system(){
     "关于信源：你在出报前会拿到每条候选的信源等级（一手 / 二手 / 传闻 / 转载）。读者问「这条靠谱吗」「消息来源怎么样」时，照实说等级，不要替他下结论。" +
     "关于公开过程：你每出一次报，都会把过程留痕 —— 候选池里放了哪些、三位初审各自说了什么、你写下的导语和每条取舍理由、以及你砍掉了什么。读者问「你们是怎么选的」「为什么没选那条」时用 read_trail 调出来讲，照着当时的记录说，不要事后美化。同时本报有一套写死的编辑方针（编辑部宪法），你每期都按它办；读者问「你们的标准是什么」时用 read_charter 如实念，不要自己另编一套。" +
     "关于认错：你出报时会留下本期报到的硬事实（claims）和三条预测，下一期取数后自动核对 —— 被推翻的登进「更正」栏，同一天里不同来源说法打架的登进「口径不一致」栏，连你砍掉没上的三条也会公开。读者问「你报错过吗」「更正过几次」时用 read_ledger 查，如实说，不要粉饰，也不要讲「我会持续改进」这种空话。" +
-    "注意：search_archive 只查本报档案（本地），不是联网搜索。用户问的是外面的事、你不知道的事，就如实说不知道，不要编。" +
-    "\n\n" + ag_context()
+    "注意：search_archive 只查本报档案（本地），不是联网搜索。用户问的是外面的事、你不知道的事，就如实说不知道，不要编。"
 }
 
 fn ag_model_text(){
@@ -2778,15 +2832,16 @@ fn ag_turn(){
         sync_ui()
         return
     }
-    let msgs = [{role: "system" content: ag_system()}]
-    for m in ag_msgs { msgs.push(m) }
-    host.request("llm.chat", {messages: msgs as_json: true temperature: 0 max_tokens: 1024 schema: ag_shape label: "brief.agent"}, fn(r){
+    let convo = []
+    for m in ag_msgs { convo.push(m) }
+    ag_t0 = time_now()
+    host.request("model.complete", {task: ag_system() input: {context: ag_context() history: convo} schema: ag_shape class: "strong" allow_urls: true}, fn(r){
         ag_reply(r)
     })
 }
 
 fn ag_reply(r){
-    if !r.is_ok || r.data == nil || r.data.data == nil {
+    if !r.is_ok || r.data == nil || r.data.output == nil {
         ag_busy = false
         ag_note = "主编这次没有答复"
         if r.error != nil && r.error != "" { ag_note = "主编这次没有答复（" + r.error + "）" }
@@ -2795,7 +2850,7 @@ fn ag_reply(r){
         sync_ui()
         return
     }
-    let d = r.data.data
+    let d = r.data.output
     let say = ""
     if d.say != nil { say = "" + d.say }
     let tool = ""
@@ -2812,7 +2867,7 @@ fn ag_reply(r){
     if tool == "" || tool == "none" {
         if ag_unfinished() && ag_nudge_more() { return }
         ag_busy = false
-        ag_note = "主编 · " + seconds_text(r.data.elapsed_ms) + " · " + ag_model_text()
+        ag_note = "主编 · " + seconds_text((time_now() - ag_t0) * 1000) + " · " + ag_model_text()
         ag_trim_log()
         sync_ui()
         // 主编的收尾话，配上自己的声音说一遍
@@ -2999,14 +3054,12 @@ fn panel_role(id){
     let sys = role.line + "你是《晨报》的" + role.label + "初审编辑，只从这一个角度判断：" + role.ask + "输出一个 JSON 对象，只有两项：digest 是一句话点评（不超过 60 字）；votes 是你推荐的候选序号数组（最多 6 个）。第一个字符就是 {，不要任何思考过程，不要围栏。\n[编辑部宪法 panel/" + charter_v("panel") + "]"
     let body = "读者的关注点：" + focus + "\n\n候选标题（序号从 0 开始）\n" + list + "\n请独立给出你的初审意见。"
     let t0 = time_now()
-    host.request("llm.chat", {
-        system: sys
-        prompt: body
-        as_json: true
-        temperature: 0
-        max_tokens: 2048
+    host.request("model.complete", {
+        task: sys
+        input: body
         schema: role_shape
-        label: "brief.panel." + id
+        class: "fast"
+        allow_urls: true
     }, fn(r){
         panel_put(id, r, t0)
     })
@@ -3018,17 +3071,17 @@ fn panel_put(id, r, t0){
     if role != nil { label = role.label }
     let item = {id: id label: label state: "ok" digest: "" votes: [] ms: 0 model: ""}
     let good = false
-    if r.is_ok && r.data != nil && r.data.data != nil { good = true }
+    if r.is_ok && r.data != nil && r.data.output != nil { good = true }
     if good {
-        let d = r.data.data
+        let d = r.data.output
         let dg = d.digest
         if dg == nil { dg = "" }
         item.digest = dg
         let vs = []
         if d.votes != nil { for v in d.votes { vs.push(v) } }
         item.votes = vs
-        item.model = r.data.model
-        item.ms = r.data.elapsed_ms
+        item.model = "AI"
+        item.ms = (time_now() - t0) * 1000
     } else {
         item.state = "fail"
         item.digest = "这位编辑这次没有答复。"
@@ -3212,27 +3265,26 @@ fn judge_try(n){
     if focus == "未选主题（全都要）" { focus = "没有特别偏好，挑最重要的科技新闻" }
     let panel_note_line = panel_digest_text()
     let ask_text_full = "今天是 " + today_text() + "。\n读者的关注点：" + focus + "\n读者画像：" + pf_focus() + "\n\n候选标题（序号从 0 开始）\n" + list + "\n\n三位初审编辑的独立意见如下，各自的推荐序号互不商量，仅供你参考：\n" + panel_note_line + "\n从候选里挑出最多 " + limit + " 条最值得进入晨报的科技项目，按重要性从高到低排序，每条写一句中文入选理由。当三位编辑意见不一致时，你来做最终取舍。直接输出 JSON，不要思考过程。"
-    host.request("llm.chat", {
-        system: "[编辑部宪法 judge/" + charter_v("judge") + "]\n你是一位科技新闻主编，手下有技术、行业、读者三位初审编辑。三位编辑已经各自给过意见，你参考但不被他们绑住，做最终取舍。候选标题前的方括号是信源等级：一手＝官方博客或仓库或论文，二手＝媒体报道，传闻＝社交平台未经证实，转载＝聚合站。硬规矩：标注为「传闻·未证实」的条目最多只允许入选 1 条，且入选理由里必须写明「尚未证实」。一手来源在同等重要程度下优先。直接输出一个 JSON 对象，第一个字符就是 {，不要输出任何推理过程或思考。不要啰嗦，不要加围栏。JSON 结构：intro 是导语（字符串），picks 是数组，每项含 i（候选序号，整数）和 why（入选理由，字符串）；drops 是数组、最多 3 项，每项含 i 和 why，记下你没选中但最可惜的候选，why 用一句中文说清为什么没上（例如信源太薄、话题与已选重复、体量太小）。"
-        prompt: ask_text_full
-        as_json: true
-        temperature: 0
-        max_tokens: 2048
+    ai_t0 = time_now()
+    host.request("model.complete", {
+        task: "[编辑部宪法 judge/" + charter_v("judge") + "]\n你是一位科技新闻主编，手下有技术、行业、读者三位初审编辑。三位编辑已经各自给过意见，你参考但不被他们绑住，做最终取舍。候选标题前的方括号是信源等级：一手＝官方博客或仓库或论文，二手＝媒体报道，传闻＝社交平台未经证实，转载＝聚合站。硬规矩：标注为「传闻·未证实」的条目最多只允许入选 1 条，且入选理由里必须写明「尚未证实」。一手来源在同等重要程度下优先。直接输出一个 JSON 对象，第一个字符就是 {，不要输出任何推理过程或思考。不要啰嗦，不要加围栏。JSON 结构：intro 是导语（字符串），picks 是数组，每项含 i（候选序号，整数）和 why（入选理由，字符串）；drops 是数组、最多 3 项，每项含 i 和 why，记下你没选中但最可惜的候选，why 用一句中文说清为什么没上（例如信源太薄、话题与已选重复、体量太小）。"
+        input: ask_text_full
         schema: brief_shape
-        label: "brief.judge"
+        class: "strong"
+        allow_urls: true
     }, fn(r){
         let ok_data = false
-        if r.is_ok && r.data != nil && r.data.data != nil && r.data.data.picks != nil { ok_data = true }
+        if r.is_ok && r.data != nil && r.data.output != nil && r.data.output.picks != nil { ok_data = true }
         if ok_data {
             ai_on = true
             ai_state = "ok"
-            ai_intro = r.data.data.intro
-            ai_model = r.data.model
-            ai_ms = r.data.elapsed_ms
-            ai_tokens = r.data.usage.total_tokens
-            if r.data.reasoning != "" { ai_think = r.data.reasoning }
-            picks_from_ai(r.data.data.picks)
-            drops_from_ai(r.data.data.drops)
+            ai_intro = r.data.output.intro
+            ai_model = "AI 主编"
+            ai_ms = (time_now() - ai_t0) * 1000
+            ai_tokens = model_tokens(r.data)
+            ai_think = ""
+            picks_from_ai(r.data.output.picks)
+            drops_from_ai(r.data.output.drops)
             // 留痕：主编的导语、每一条的入选理由、以及他砍掉的（复盘第三层）
             trail_set_judge("" + ai_model, ai_ms, "" + ai_intro, picked, drop)
             if picked.len() > 0 {
@@ -3330,23 +3382,21 @@ fn aq_start(){
     aq_note = "主编正在想，今天该问你什么…"
     sync_ui()
     let body = "今天是 " + today_text() + "。\n读者当前设置：主题=" + topics_line() + "；条数上限=" + limit + " 条；读者画像：" + pf_focus() + "。\n\n请用一句不超过 20 字的话问他今天更想看哪个角度，并给出两个互相排斥的选项，每个选项不超过 18 字、必须是一个能直接当成本期关注点用的角度（例如「偏技术实现与开源进展」对「偏行业格局与商业化」）。只输出 JSON。"
-    host.request("llm.chat", {
-        system: "你是科技新闻主编。开报前你要问读者一个二选一的问题，用来决定今天的取舍。两个选项必须互相排斥、都必须能直接当成本期的关注点。直接输出一个 JSON 对象，第一个字符就是 {，不要围栏，不要任何思考过程。结构：q 是问题（字符串），a 是选项一（字符串），b 是选项二（字符串）。
+    host.request("model.complete", {
+        task: "你是科技新闻主编。开报前你要问读者一个二选一的问题，用来决定今天的取舍。两个选项必须互相排斥、都必须能直接当成本期的关注点。直接输出一个 JSON 对象，第一个字符就是 {，不要围栏，不要任何思考过程。结构：q 是问题（字符串），a 是选项一（字符串），b 是选项二（字符串）。
 [编辑部宪法 ask/" + charter_v("ask") + "]"
-        prompt: body
-        as_json: true
-        temperature: 0
-        max_tokens: 512
+        input: body
         schema: aq_shape
-        label: "brief.ask"
+        class: "fast"
+        allow_urls: true
     }, fn(r){
         let got = false
-        if r.is_ok && r.data != nil && r.data.data != nil && r.data.data.q != nil { got = true }
+        if r.is_ok && r.data != nil && r.data.output != nil && r.data.output.q != nil { got = true }
         if got {
             aq_state = "ok"
-            aq_q = r.data.data.q
-            aq_a = r.data.data.a
-            aq_b = r.data.data.b
+            aq_q = r.data.output.q
+            aq_a = r.data.output.a
+            aq_b = r.data.output.b
             aq_note = "答 A、答 B，或者说「你定」都行。"
             sync_ui()
             if vc_auto { vc_say_now(aq_q) }
@@ -3398,23 +3448,21 @@ fn iv_kick(){
     iv_from = story.title
     sync_ui()
     let body = "这条新闻的标题：" + story.title + "\n原文链接：" + story_url_text() + "\n官方摘要：" + story_sum + "\n\n请起草一封写给相关方（公司 / 作者 / 项目维护者）的采访邮件。要求：只问一个能用一句话回答的具体问题；正文不超过三句话；语气克制，不奉承、不指控、不预设结论；不要编造收件人邮箱，找不到公开邮箱就留空字符串。只输出 JSON。"
-    host.request("llm.chat", {
-        system: "[编辑部宪法 interview/" + charter_v("interview") + "]
+    host.request("model.complete", {
+        task: "[编辑部宪法 interview/" + charter_v("interview") + "]
 你是《晨报》主编，要给一条新闻的当事人写一封简短的追问邮件。你只问一个具体、可验证的问题。直接输出一个 JSON 对象，第一个字符就是 {，不要围栏，不要任何思考过程。结构：to 是收件人邮箱（找不到公开邮箱填空字符串），sub 是邮件主题，body 是正文。"
-        prompt: body
-        as_json: true
-        temperature: 0
-        max_tokens: 1024
+        input: body
         schema: iv_shape
-        label: "brief.interview"
+        class: "strong"
+        allow_urls: true
     }, fn(r){
         let got = false
-        if r.is_ok && r.data != nil && r.data.data != nil && r.data.data.body != nil { got = true }
+        if r.is_ok && r.data != nil && r.data.output != nil && r.data.output.body != nil { got = true }
         if got {
             iv_state = "ok"
-            iv_to = r.data.data.to
-            iv_sub = r.data.data.sub
-            iv_body = r.data.data.body
+            iv_to = r.data.output.to
+            iv_sub = r.data.output.sub
+            iv_body = r.data.output.body
             iv_save()
             iv_note = "草稿已存在本机。发信不在这份程序里 —— 需要你在外部确认后自己发。"
         } else {
@@ -3545,10 +3593,20 @@ fn rv_next(){
     sync_ui()
     // 轮询上限按宿主报的时长算：一段 150 字的导语要念 30 秒左右，
     // 写死轮数会把长段拦腰切断（每轮 0.9 秒）。
-    host.request("llm.speak", {text: t lang: "zh-CN"}, fn(r){
+    host.request("llm.speak", {text: t lang: "zh-CN" voice: vc_voice}, fn(r){
         if !rv_on { return }
+        // 念不出来就停下并说清楚。以前这里不管成败都照常计时推进，
+        // 宿主没有语音时整期会「无声地念完」，读者以为是自己没听见。
+        if !r.is_ok {
+            rv_on = false
+            let why = "这一期念不出来"
+            if r.error != nil && r.error != "" { why = why + "：" + r.error }
+            vc_note = why + "。文字照常显示，其余功能不受影响"
+            sync_ui()
+            return
+        }
         let secs = 4
-        if r.is_ok && r.data != nil {
+        if r.data != nil {
             let sv = r.data["seconds"]
             if sv != nil { secs = sv }
         }
@@ -3682,8 +3740,8 @@ fn finish(){
     trail_save()
     sync_ui()
     if picked.len() > 0 { start_timeout(2.5, || cover_kick()) }
-    // 核对先起：它要用上一期留下的台账，必须赶在 fc_kick 覆盖它之前拿到快照
-    if picked.len() > 0 { start_timeout(4.4, || fact_kick()) }
+    if picked.len() > 0 { start_timeout(3.3, || vd_kick()) }   // 决策台：挤在封面与核对之间落地，独自起一个定时器，别跟别人同一行
+    if picked.len() > 0 { start_timeout(4.4, || fact_kick()) }   // 核对先起：要用上一期留下的台账，必须赶在 fc_kick 覆盖它之前拿到快照
     if picked.len() > 0 { start_timeout(6.2, || fc_kick()) }
     if picked.len() > 0 && vc_auto {
         start_timeout(1.2, || vc_hello_intro())
@@ -3726,10 +3784,17 @@ fn load_last(){
 fn make_plan(){
     phase = "plan"
     sync_ui()
-    host.request("llm.status", {}, fn(r){
-        if r.is_ok && r.data.ready {
+    host.request("model.complete", {
+        // 探测 schema 的 key 不能叫 ok —— splash 把裸的 ok 当关键字
+        // （parser.rs: `if id == id!(ok)`），会当成 ok 表达式来解析。
+        task: "这是一次可用性探测。只回答一个 JSON 对象，ready 为 true。"
+        input: "probe"
+        schema: {type: "object" required: ["ready"] properties: {ready: {type: "boolean"}}}
+        class: "fast"
+    }, fn(r){
+        if r.is_ok && r.data != nil && r.data.output != nil {
             ai_ready = 1
-            ai_model = r.data.model
+            ai_model = "AI 主编"
         } else {
             ai_ready = 0
         }
@@ -3791,7 +3856,7 @@ fn restart(){
     cover_head = ""
     cover_state = ""
     cover_note = ""
-    cover_q = ""
+    cover_q = "" vd_reset()
     picked = []
     failed = []
     ok_sources = []
@@ -3875,20 +3940,18 @@ fn cover_kick(){
     }
     let intro = ai_intro
     if intro == "" { intro = "（这期没有导语）" }
-    host.request("llm.chat", {
-        system: "[编辑部宪法 cover/" + charter_v("cover") + "]
+    host.request("model.complete", {
+        task: "[编辑部宪法 cover/" + charter_v("cover") + "]
 你是报纸头版的视觉主编，负责为每天一期的科技晨报定头版标题和主画面。直接输出 JSON 对象，第一个字符就是 {，不要输出任何推理过程。JSON 结构：headline 是英文头版大标题（字符串，不超过 9 个词，全大写，不带引号），image 是英文画面描述（字符串，报纸插画风格，不含任何文字）。"
-        prompt: "今天是 " + today_text() + "。\n本期晨报导语：" + intro + "\n今日入选标题（按重要性排序）：\n" + lines + "\n请为这一期设计头版：headline 写一句英文大标题，概括今天最重要的主题；image 写一句英文画面描述，用来画头版主图。"
-        as_json: true
-        temperature: 0
-        max_tokens: 1024
+        input: "今天是 " + today_text() + "。\n本期晨报导语：" + intro + "\n今日入选标题（按重要性排序）：\n" + lines + "\n请为这一期设计头版：headline 写一句英文大标题，概括今天最重要的主题；image 写一句英文画面描述，用来画头版主图。"
         schema: cover_shape
-        label: "brief.cover"
+        class: "strong"
+        allow_urls: true
     }, fn(r){
         let good = false
-        if r.is_ok && r.data != nil && r.data.data != nil && r.data.data.headline != nil && r.data.data.image != nil { good = true }
+        if r.is_ok && r.data != nil && r.data.output != nil && r.data.output.headline != nil && r.data.output.image != nil { good = true }
         if good {
-            cover_head = "" + r.data.data.headline
+            cover_head = "" + r.data.output.headline
             if trail.len() > 0 {
                 let cv = trail["cover"]
                 cv["headline"] = cover_head
@@ -3896,7 +3959,7 @@ fn cover_kick(){
                 trail["cover"] = cv
                 trail_save()
             }
-            cover_q = "front page newspaper editorial illustration, " + r.data.data.image + ", bold iconic composition, dramatic but tasteful, 16:9, no text, no letters, no watermark"
+            cover_q = "front page newspaper editorial illustration, " + r.data.output.image + ", bold iconic composition, dramatic but tasteful, 16:9, no text, no letters, no watermark"
             cover_state = "drawing"
             cover_note = "头版标语已定，正在画头版主图…"
             sync_ui()
@@ -4108,7 +4171,7 @@ fn boot(){
     trail_load()
     iv_load()
     sync_ui()
-    start_timeout(0.30, || vc_probe())
+    // 不再自动探 llm.speech：应用没申请 llm，这一探在任何宿主上都会被拒；而被拒时上游直接重入 isolate（ISSUE-03），会把调用栈弄脏。
     start_timeout(1.10, || cg_text())
     start_timeout(3.12, || cg_off())
 }
@@ -4197,6 +4260,188 @@ let MicBtn = ButtonFlat{height: 34 padding: Inset{left: 14 right: 14}
     draw_bg +: {border_radius: 17.0 color: #x18213a color_hover: #x1d2a45 color_down: #x121a2e border_size: 1.0
         border_color: #x2b3a5e border_color_hover: #x3d4f78 border_color_down: #x2b3a5e}
     draw_text +: {color: #xe8eefc color_hover: #xffffff color_down: #xe8eefc text_style +: {font_size: 12}}
+}
+
+// =====================================================================
+// 决策台 · Jev / System One 式的「校准选择」
+// ---------------------------------------------------------------------
+// 2026 年 9 月，TypeSafe AI 放出 Jev：它不写文章，只把输入归进「预设输出集合」，
+// 返回是/否概率、从给定选项里选一个、或按等级打分——结果带类型、带置信度，
+// 程序可以直接拿去做分支。随后 OpenAI 上线 Decisions API、Databricks 出 ai_decide、
+// Cloudflare 放开源 Clef 系列：行业开始分工，生成式模型写给人看，决策模型给代码用。
+// 这个应用把这条分工搬进编辑部：主编（生成式）照旧写导语与入选理由，给人读；
+// 决策台拿同一批候选再判一次，只回「选项 + 置信度」，给程序用。两边不一致的地方
+// 记成「分歧」，写进留痕。
+// 本机没有 System One 端点，所以这里走同一条 model.complete 通道，把 schema 收紧成
+// 「预设集合 + 0-100」，并把「不要写理由」写进 task —— 不在没有端点时假装有端点，
+// 只把决策模型那套约束老老实实照搬过来。将来有真正的决策端点，替换 vd_kick() 里
+// 那一次 host.request 即可，其余不动。
+// =====================================================================
+
+// 预设输出集合：像 Jev 的 Choice 一样，答案只能落在这四个里，落不进去记 unknown。
+let vd_tiers = ["first" "second" "rumor" "repost"]
+let vd_shape = {type: "object" required: ["verdicts"] properties: {verdicts: {type: "array" items: {type: "object" required: ["i" "tier" "worth" "heat"] properties: {i: {type: "integer"} tier: {type: "string"} worth: {type: "integer"} heat: {type: "integer"}}}}}}
+
+let vd_state = ""
+let vd_note = ""
+let vd_rows = []
+let vd_agree = 0
+let vd_unknown = 0
+let vd_ms = 0
+let vd_tokens = 0
+let vd_t0 = 0
+
+fn vd_reset(){
+    vd_state = ""
+    vd_note = ""
+    vd_rows = []
+    vd_agree = 0
+    vd_unknown = 0
+    vd_ms = 0
+    vd_tokens = 0
+}
+
+// 一次调用、三个问题，全部是「有限选项」：档位（Choice）、够不够格（Noul）、热度（Score）。
+fn vd_kick(){
+    if picked.len() == 0 { return }
+    vd_reset()
+    vd_state = "asking"
+    vd_note = "决策台正在对同一批候选做一次校准判断…"
+    sync_ui()
+    let list = ""
+    let i = 0
+    for r in picked {
+        list = list + "" + i + ". [" + tier_label(r) + "] " + r.title + "\n"
+        i = i + 1
+    }
+    vd_t0 = time_now()
+    host.request("model.complete", {
+        task: "[编辑部宪法 judge/" + charter_v("judge") + "]\n你是决策台，不是写手。同一批候选，生成式主编已经写过理由，你只做三件事：给每条归一个信源档位、给一个「够不够格上晨报」的概率、给一个热度分。硬规矩：tier 只能取 first / second / rumor / repost 四个值之一，落不进任何一档就写 unknown；worth 是「这条够格上晨报」为真的概率，0 到 100 的整数；heat 是公众关注度，0 到 10 的整数。不要写任何解释、理由或句子。直接输出 JSON，第一个字符就是 {，不要围栏，不要思考过程。结构：verdicts 是数组，每项含 i（候选序号，整数）、tier（字符串）、worth（整数）、heat（整数）。"
+        input: "候选（序号从 0 开始；每条前面的方括号是本报按域名判出的信源档位，仅供参考）：\n" + list
+        schema: vd_shape
+        class: "fast"
+        allow_urls: false
+    }, fn(r){
+        if r.is_ok && r.data != nil && r.data.output != nil && r.data.output.verdicts != nil {
+            vd_ms = (time_now() - vd_t0) * 1000
+            vd_tokens = model_tokens(r.data)
+            vd_put(r.data.output.verdicts)
+            vd_state = "ok"
+            vd_trail()
+        } else {
+            vd_state = "failed"
+            vd_note = "决策台这次没有答复，本期的取舍仍然以上面那一版为准。"
+        }
+        sync_ui()
+    })
+}
+
+// 把回答收进预设集合：落不进集合的档位一律记 unknown，别让自由文本混进结构化结果。
+// 同时跟本报按域名判出的档位对一下，不一致就是一次「分歧」。
+fn vd_put(list){
+    vd_rows = []
+    vd_agree = 0
+    vd_unknown = 0
+    for v in list {
+        let idx = v.i
+        if idx != nil {
+            if idx >= 0 && idx < picked.len() {
+                let r = picked[idx]
+                let t = "" + v["tier"]
+                let known = false
+                for p in vd_tiers { if p == t { known = true } }
+                if known == false { t = "unknown" vd_unknown = vd_unknown + 1 }
+                let w = 0
+                if v["worth"] != nil { w = v["worth"] }
+                let h = 0
+                if v["heat"] != nil { h = v["heat"] }
+                let same = false
+                if t == tier_of(r) { same = true vd_agree = vd_agree + 1 }
+                vd_rows.push({row: r tier: t worth: w heat: h same: same})
+            }
+        }
+    }
+}
+
+fn vd_trail(){
+    if trail.len() == 0 { return }
+    let box = []
+    for v in vd_rows {
+        box.push({title: v.row.title tier: v.tier worth: v.worth heat: v.heat same: v.same})
+    }
+    trail["decision"] = {agree: vd_agree total: vd_rows.len() unknown: vd_unknown ms: vd_ms tokens: vd_tokens rows: box}
+    trail_save()
+}
+
+fn vd_tier_name(t){
+    if t == "first" { return "一手" }
+    if t == "second" { return "二手" }
+    if t == "rumor" { return "传闻·未证实" }
+    if t == "repost" { return "转载" }
+    if t == "unknown" { return "超出预设集合" }
+    t
+}
+
+fn vd_head_line(){
+    if vd_state == "asking" { return vd_note }
+    if vd_state == "failed" { return vd_note }
+    if vd_rows.len() == 0 { return "决策台没有给出结论。" }
+    let line = "与本报判级一致 " + vd_agree + "/" + vd_rows.len() + " · 用时 " + seconds_text(vd_ms) + " · " + vd_tokens + " tokens"
+    if vd_unknown > 0 { line = line + " · 有 " + vd_unknown + " 条落不进预设集合" }
+    line
+}
+
+fn vd_row_text(k){
+    if k >= vd_rows.len() { return "" }
+    let v = vd_rows[k]
+    let tag = "分歧"
+    if v.same { tag = "一致" }
+    let call = "不值得上"
+    if v.worth >= 50 { call = "够格上" }
+    "" + (k + 1) + ". 信源 " + vd_tier_name(v.tier) + " · 与本报" + tag + "\n    " + call + " " + v.worth + "% · 热度 " + v.heat + "/10 · " + art_cut("" + v.row.title, 26)
+}
+
+fn vd_open(k){
+    if k >= vd_rows.len() { return }
+    open_story(vd_rows[k].row)
+}
+
+// ---- 语音音色优选：宿主报上来的音色里，挑最像人的那一个 ----
+// 各家 shell 都会把可用音色连 id、name、language 一起报上来。Windows 自带的
+// SAPI 音色偏机械，新系统的 Natural / Neural 音色自然得多；edge-tts 那类云端
+// 神经音色（XiaoxiaoNeural / YunxiNeural / YunyangNeural…）是同一族的命名。
+// 这里只做「挑一个」，不做合成；挑不到就返回空串，宿主用它的默认音色，行为不变。
+let vc_voice = ""
+
+fn vc_has(s, sub){
+    if s.search(sub) >= 0 { return true }
+    false
+}
+
+fn vc_pick_voice(vs){
+    let best = ""
+    let best_rank = 99
+    for v in vs {
+        let lang = ""
+        if v["language"] != nil { lang = "" + v["language"] }
+        if vc_has(lang, "zh") {
+            let vid = ""
+            let all = ""
+            if v["id"] != nil { vid = "" + v["id"] all = vid }
+            if v["name"] != nil { all = all + " " + ("" + v["name"]) }
+            let rk = 8
+            if vc_has(all, "Natural") { rk = 0 }
+            else if vc_has(all, "Neural") { rk = 1 }
+            else if vc_has(all, "Xiaoxiao") { rk = 2 }
+            else if vc_has(all, "Yunxi") { rk = 3 }
+            else if vc_has(all, "Yunyang") { rk = 4 }
+            else if vc_has(all, "Huihui") { rk = 5 }
+            else if vc_has(all, "Yaoyao") { rk = 6 }
+            if vid != "" && rk < best_rank { best_rank = rk best = vid }
+        }
+    }
+    if best_rank >= 9 { return "" }
+    best
 }
 
 HostedView{width: Fill height: Fill
@@ -4479,6 +4724,30 @@ HostedView{width: Fill height: Fill
                             Label{width: Fill text: drop_line(0) max_lines: 3 draw_text.color: #x4a4c54 draw_text.text_style.font_size: 11}
                             Label{visible: drop_count() > 1 width: Fill text: drop_line(1) max_lines: 3 draw_text.color: #x4a4c54 draw_text.text_style.font_size: 11}
                             Label{visible: drop_count() > 2 width: Fill text: drop_line(2) max_lines: 3 draw_text.color: #x4a4c54 draw_text.text_style.font_size: 11}
+                        }
+                    }
+                    // ---- 决策台 · 同一批候选，换一类模型再判一次（Jev 式校准选择） ----
+                    // 主编那一版是「给人读的」：导语和理由都是句子。这一版是「给程序用的」：
+                    // 每条只回一个档位、一个概率、一个分。两者不一样的地方就是分歧，点一行可读原文。
+                    if vd_state != "" {
+                        RoundedView{width: Fill height: Fit flow: Down spacing: 5
+                            new_batch: true show_bg: true draw_bg.color: #xeef2ff draw_bg.border_radius: 14.0
+                            padding: Inset{top: 13 bottom: 13 left: 14 right: 14}
+                            Label{width: Fill text: "决策台 · 另一类模型只回「选择 + 置信度」" draw_text.color: #x3f4fae draw_text.text_style: theme.font_bold{font_size: 11}}
+                            Label{width: Fill text: "上面那版写给人读，这一版给程序用：档位只能落进预设四档，掉出去记 unknown，另加 0-100 进刊概率与 0-10 热度分。点一行可打开原报道。" max_lines: 4 draw_text.color: #x7a8098 draw_text.text_style.font_size: 10}
+                            Label{width: Fill text: vd_head_line() max_lines: 3 draw_text.color: #x4a4c54 draw_text.text_style.font_size: 11}
+                            if vd_state == "asking" {
+                                Label{width: Fill text: "决策台正在判…" draw_text.color: secondary draw_text.text_style.font_size: 10}
+                            }
+                            for k v in vd_rows {
+                                GestureView{width: Fill height: Fit on_tap: |x, y| vd_open(k)
+                                    RoundedView{width: Fill height: Fit flow: Down spacing: 2
+                                        new_batch: true show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 10.0
+                                        padding: Inset{top: 9 bottom: 9 left: 11 right: 11}
+                                        Label{width: Fill text: vd_row_text(k) max_lines: 3 draw_text.color: #x3d3f47 draw_text.text_style.font_size: 11}
+                                    }
+                                }
+                            }
                         }
                     }
                 }

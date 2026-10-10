@@ -34,25 +34,38 @@ def say(msg):
     print(msg, flush=True)
 
 
-def find_bin(name, env_var):
-    """按优先级找可执行文件。"""
+def has_marker(path, marker):
+    """二进制里是否含某个能力标记。
+
+    card-host 有多个历史构建，早期的那个不认识 `model` 能力：用它启动，
+    整个卡片会被拒（`refused: unknown capability "model"`）而只剩空白。
+    这个坑踩过，所以选宿主时顺手核一下标记，选错了就直接跳过。
+    """
+    try:
+        return marker.encode() in Path(path).read_bytes()
+    except Exception:
+        return True  # 读不动就别拦，交给运行时报错
+
+
+def find_bin(name, env_var, marker=None):
+    """按优先级找可执行文件。marker 给了就要求二进制里含该标记。"""
     # 1) 环境变量
     v = os.environ.get(env_var)
-    if v and Path(v).is_file():
+    if v and Path(v).is_file() and (marker is None or has_marker(v, marker)):
         return Path(v)
-    # 2) 常见安装位置
+    # 2) 常见安装位置（新构建在前；不认 model 的旧构建会被 marker 挡掉）
     candidates = [
         Path(r"C:\rustbuild\octosense-hub\release") / name,
         Path(r"C:\rustbuild\octosense-hub\x86_64-pc-windows-gnu\release") / name,
     ]
     for c in candidates:
-        if c.is_file():
+        if c.is_file() and (marker is None or has_marker(c, marker)):
             return c
     # 3) 仓库相邻：<repo>/../OctoSense-App-Hub/target/release/<name>
     for base in (REPO.parent, REPO):
         for sub in ("OctoSense-App-Hub/target/release", "OctoSense-App-Hub/target/debug"):
             c = base / sub / name
-            if c.is_file():
+            if c.is_file() and (marker is None or has_marker(c, marker)):
                 return c
     return None
 
@@ -66,19 +79,25 @@ def find_octo():
     return None
 
 
-def llm_env():
+def model_env():
     """返回 (环境变量字典, 说明文字)。
 
+    应用只走官方的 model.complete，钥匙由宿主持有、应用看不到，
+    所以这里配的是**宿主**的环境变量（OCTOS_MODEL_*），不是应用的。
+
     AI 通路的优先级：
-      1. 已有 OCTOS_LLM_KEY（用户自己配的）
+      1. 已有 OCTOS_MODEL_KEY / OCTOS_LLM_KEY（用户自己配的）
       2. 本地转发服务（如果配置了钥匙）
       3. 都没有 → 规则模式（应用会自动降级，不崩）
     """
     env = {}
-    key = os.environ.get("OCTOS_LLM_KEY") or os.environ.get("MINIMAX_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    key = (os.environ.get("OCTOS_MODEL_KEY") or os.environ.get("OCTOS_LLM_KEY")
+           or os.environ.get("SILICONFLOW_API_KEY") or os.environ.get("OPENAI_API_KEY"))
     if key:
-        env["OCTOS_LLM_TIMEOUT"] = os.environ.get("OCTOS_LLM_TIMEOUT", "300")
-        return env, "使用环境变量里的模型钥匙"
+        env["OCTOS_MODEL_KEY"] = key
+        if os.environ.get("OCTOS_MODEL_BASE_URL"):
+            env["OCTOS_MODEL_BASE_URL"] = os.environ["OCTOS_MODEL_BASE_URL"]
+        return env, "使用环境变量里的模型钥匙（钥匙留在宿主，应用看不到）"
 
     # 本地转发服务：把需要特殊头的上游包一层
     shim_key_file = Path(r"C:\rustbuild\tmp\shim-key.txt")
@@ -100,13 +119,12 @@ def llm_env():
             time.sleep(2.5)
             up = True
         if up:
-            env["OCTOS_LLM_BASE_URL"] = f"http://127.0.0.1:{SHIM_PORT}/v1"
-            # 推理型模型单次可到 60 秒以上；宿主默认超时 60 秒会把编辑部并行调用判为失败，
-            # 于是界面显示"没调用 AI"。这里给足预算。
-            env["OCTOS_LLM_TIMEOUT"] = os.environ.get("OCTOS_LLM_TIMEOUT", "300")
-            env["OCTOS_LLM_KEY"] = shim_key
-            env["OCTOS_LLM_MODEL"] = os.environ.get("OCTOS_LLM_MODEL", "kimi-k2.6")
-            env["OCTOS_LLM_MODELS"] = env["OCTOS_LLM_MODEL"]
+            # 模型的超时由宿主自己的 model 服务管（开发宿主给了 180 秒，
+            # 引擎型模型单次可到 60 秒以上；默认 60 秒会把编辑部并行调用判为失败）。
+            env["OCTOS_MODEL_BASE_URL"] = f"http://127.0.0.1:{SHIM_PORT}/v1"
+            env["OCTOS_MODEL_KEY"] = shim_key
+            env["OCTOS_MODEL_FAST"] = os.environ.get("OCTOS_MODEL_FAST", "deepseek-ai/DeepSeek-V4-Flash")
+            env["OCTOS_MODEL_STRONG"] = os.environ.get("OCTOS_MODEL_STRONG", "deepseek-ai/DeepSeek-V4-Pro")
             return env, "使用本地模型转发服务"
 
     return env, "规则模式（未配置模型钥匙：主编挑选/编辑部评审将自动降级，其余功能不受影响）"
@@ -133,10 +151,12 @@ def main():
         return 1
 
     hub = find_bin("hub.exe", "OCTO_HUB")
-    card_host = find_bin("card-host.exe", "OCTO_CARD_HOST")
+    card_host = find_bin("card-host.exe", "OCTO_CARD_HOST", marker="model.complete")
     if not hub or not card_host:
         say("[错误] 找不到运行组件 hub.exe / card-host.exe。")
         say("       请先按 07_官方仓库下载说明.md 下载并构建 OctoSense-App-Hub。")
+        say("       注意：card-host 必须是认识 `model` 能力的构建（二进制里含 model.complete），")
+        say("       旧构建会让卡片以「unknown capability: model」被拒而只剩空白。")
         say(f"       也可以手动设置环境变量 OCTO_HUB / OCTO_CARD_HOST 指向它们。")
         return 1
 
@@ -149,7 +169,7 @@ def main():
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUTF8"] = "1"
 
-    extra, note = llm_env()
+    extra, note = model_env()
     env.update(extra)
     say(f"  AI 通路  {note}")
     say("")

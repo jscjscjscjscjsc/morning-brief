@@ -32,3 +32,12 @@ __pycache__/
 # 系统
 Thumbs.db
 desktop.ini
+
+# 本地联调产物（hub scan 的审核包、试听样本等，命令都在文档里，可随时重跑）
+build/
+
+# ⚠️ 永不提交：官方 PUBLISHING.md 明写「There is no separate index repository and
+# no octosense-org/publish-app GitHub action. Do not add a release workflow that
+# uses them.」而 octo publish 生成的这个 workflow 恰好调用了 hub 里不存在的
+# publisher-prepare/attach/verify/pack 子命令（见 生态贡献/ISSUE-02）。
+.github/workflows/publish-app.yml

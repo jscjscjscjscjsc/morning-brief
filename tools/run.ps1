@@ -1,4 +1,4 @@
-﻿$env:OCTO_HUB='C:\rustbuild\octosense-hub\x86_64-pc-windows-gnu\release\hub.exe'
+﻿$env:OCTO_HUB='C:\rustbuild\octosense-hub\release\hub.exe'
 $env:OCTO_CARD_HOST='C:\rustbuild\octosense-hub\release\card-host.exe'
 $env:OCTOSENSE_APP_HUB='C:\Users\Admin（无密码）\Desktop\数据文件\黑客松比赛项目\OctoSense-App-Hub'
 $env:PYTHONIOENCODING='utf-8'

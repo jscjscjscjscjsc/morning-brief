@@ -2,6 +2,12 @@
 # 原因：OctoSense hub 的 bundle_blake3 对字节敏感，CRLF 转换会导致 digest 不匹配
 * text=auto eol=lf
 
+# bundle 内一律不做行尾转换（官方 SUBMITTING「Lay out the repository」要求）。
+# 我们的 bundle 不在仓库根，所以用 ** 覆盖任意深度；官方原话：
+# 「write `**/bundle/** -text` to cover a `bundle/` at any depth」
+# 校验：git check-attr text -- <某个 bundle>/manifest.json 必须输出 text: unset
+**/bundle/** -text
+
 # 二进制资源不作转换
 *.png binary
 *.jpg binary

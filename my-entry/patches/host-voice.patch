@@ -2,7 +2,7 @@ diff --git a/Cargo.lock b/Cargo.lock
 index b4f8895..4a24bb1 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -924,6 +924,17 @@ dependencies = [
+@@ -924,6 +924,17 @@
   "makepad-live-id",
  ]
  
@@ -20,7 +20,7 @@ index b4f8895..4a24bb1 100644
  [[package]]
  name = "makepad-tsdf"
  version = "0.1.0"
-@@ -1247,6 +1258,17 @@ dependencies = [
+@@ -1247,6 +1258,17 @@
   "octoscript-widgets",
   "octosense-app-policy",
   "octosense-appstore",
@@ -42,7 +42,7 @@ diff --git a/Cargo.toml b/Cargo.toml
 index 85a4a91..eb86410 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -21,6 +21,7 @@ members = [
+@@ -21,6 +21,7 @@
      "crates/card-host",
      "crates/app-host",
      "crates/app-hub-app",
@@ -54,7 +54,7 @@ diff --git a/crates/card-host/Cargo.toml b/crates/card-host/Cargo.toml
 index 70ce301..359d16c 100644
 --- a/crates/card-host/Cargo.toml
 +++ b/crates/card-host/Cargo.toml
-@@ -24,6 +24,7 @@ octoscript-makepad = { git = "https://github.com/OctoSense-org/Octoscript-Makepa
+@@ -24,6 +24,7 @@
  octoscript-widgets = { git = "https://github.com/OctoSense-org/Octoscript-Makepad.git", rev = "b1596d9c2cee6e80cca9d27b1b0c2d57b9d28dd8" }
  serde_json = "1"
  octosense-appstore = { path = "../appstore" }
@@ -66,7 +66,7 @@ diff --git a/crates/card-host/src/host.rs b/crates/card-host/src/host.rs
 index e0af835..648cfb0 100644
 --- a/crates/card-host/src/host.rs
 +++ b/crates/card-host/src/host.rs
-@@ -144,6 +144,58 @@ fn register_card_vocabulary() {
+@@ -144,6 +144,58 @@
      register_splash_isolate_mod(makepad_widgets::splash::register_agent_module);
  }
  
@@ -125,7 +125,7 @@ index e0af835..648cfb0 100644
  impl App {
      fn mount(&mut self, cx: &mut Cx) {
          let Some(args) = ARGS.get() else {
-@@ -229,8 +281,15 @@ impl AppMain for App {
+@@ -229,8 +281,15 @@
          if !self.mounted {
              self.mounted = true;
              register_card_vocabulary();
@@ -1079,7 +1079,7 @@ new file mode 100644
 index 0000000..90a2ac1
 --- /dev/null
 +++ b/crates/llm-service/src/voice.rs
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,159 @@
 +//! Voice for contained apps: the OS speech engines behind `llm.speak` /
 +//! `llm.listen_*`, and the PCM queue the host app plays.
 +//!
@@ -1131,8 +1131,43 @@ index 0000000..90a2ac1
 +    })
 +}
 +
++/// The most natural voice this machine has, for a card that asks for a
++/// language without naming a voice.
++///
++/// Voices differ a lot in how human they sound: Windows' older SAPI voices
++/// are flat, while the newer `Natural` / `Neural` ones and cloud neural
++/// voices named like `zh-CN-XiaoxiaoNeural` are much closer to a person
++/// reading the news. A card that asks for a Chinese briefing should get the
++/// best voice installed, not whichever one the engine happens to default to.
++///
++/// `PREFERRED` is ordered best-first and matched as substrings, so the same
++/// table covers SAPI, OneCore and edge-tts style ids.
++pub fn pick_voice(language: &str) -> Option<String> {
++    const PREFERRED: &[&str] = &[
++        "Natural", "Neural", "Xiaoxiao", "Yunyang", "Yunxi", "Huihui", "Yaoyao",
++    ];
++    let tag = language.split('-').next().unwrap_or(language).to_lowercase();
++    let mut best: Option<(usize, String)> = None;
++    for voice in tts::voices() {
++        if !voice.language.to_lowercase().starts_with(&tag) {
++            continue;
++        }
++        let haystack = format!("{} {}", voice.id, voice.name);
++        let rank = PREFERRED
++            .iter()
++            .position(|needle| haystack.contains(needle))
++            .unwrap_or(PREFERRED.len());
++        if best.as_ref().map_or(true, |(best_rank, _)| rank < *best_rank) {
++            best = Some((rank, voice.id));
++        }
++    }
++    best.map(|(_, id)| id)
++}
++
 +/// `llm.speak {text, voice?, rate?}` — render and start playing. Returns as
 +/// soon as the audio is queued; playback continues while the card draws.
++/// With no `voice`, the most natural one for `lang` is chosen instead of
++/// leaving the engine on its own (usually oldest) default.
 +pub fn speak(args: &Value) -> Result<Value, String> {
 +    let text = args
 +        .get("text")
@@ -1160,6 +1195,11 @@ index 0000000..90a2ac1
 +        if !voice.is_empty() {
 +            options.voice = Some(voice.to_string());
 +        }
++    }
++    // No voice named: pick the most human one for this language rather than
++    // leaving the engine on its own default, which is usually its oldest.
++    if options.voice.is_none() {
++        options.voice = pick_voice(&options.language);
 +    }
 +    if let Some(rate) = args.get("rate").and_then(|v| v.as_f64()) {
 +        options.rate = (rate as f32).clamp(0.5, 2.0);

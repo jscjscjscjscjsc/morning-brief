@@ -4,7 +4,7 @@
     "storage",
     "net",
     "images",
-    "llm"
+    "model"
   ],
   "compute": {
     "instruction_budget": null,
@@ -12,7 +12,7 @@
   },
   "id": "morning-brief",
   "integrity": {
-    "bundle_blake3": "77470aada6e85b64e4a66ef5a4fc9eb035f9ab4c37641ec732aaff4cc01aca92"
+    "bundle_blake3": "651873f33b3fdf3ed96f2073223f74dfe38e05b7ed78799557339405925aed24"
   },
   "name": "Morning Brief",
   "network": {
@@ -26,5 +26,5 @@
   "storage": {
     "max_bytes": null
   },
-  "version": "0.1.0"
+  "version": "0.2.0"
 }
