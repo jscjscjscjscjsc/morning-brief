@@ -212,6 +212,11 @@ let vc_tts = false
 let vc_probed = false
 let vc_wait_say = ""
 let vc_wait_mic = false
+// 惰性探测：不在启动阶段探 model.speech（白白多一次宿主往返），
+// 等真正要说话 / 开麦 / 点朗读开关时再探。vc_probed 记录「探过了」，_wait_* 暂存探测期间积压的请求。
+let vc_probed = false
+let vc_wait_say = ""
+let vc_wait_mic = false
 let vc_stt = false
 let vc_voices = 0
 let vc_auto = true
@@ -232,6 +237,7 @@ let vc_pending = ""              // 主编在忙时，先把这句话排队，�
 let vc_auto_mic = false          // 这一轮语音结束后是否要自动重开麦
 let vc_play_wait = 0             // 等朗读播完的轮次计数（兜底，不无限等）
 let vc_sheet_on = false          // 豆包式收音台（全屏浮层）开着吗
+let vc_mic_retry = 0             // 这一轮自动重开麦的次数（识别器常刚开麦就报 ended）
 let vc_level = 0.0               // 最近一次识别器电平（驱动波形；没有也行）
 
 // ===== 工作台 · 档案（按时间查往期晨报、收藏）=====
@@ -312,6 +318,12 @@ let rv_q = []
 let rv_i = 0
 let rv_on = false
 let rv_total = 14
+// 「等语音能力探测完就开始念」的待办。
+// 为什么需要它：语音能力是**用时再探**的（见 boot() 里那段注释），所以开机后
+// 第一次念报时 vc_tts 还是 false。rv_start 原来直接拿 vc_tts 判，结论就成了
+// 「这台机器没有可用的语音合成」—— 哪怕这台机器明明有语音。实测踩过：
+// 开机后第一件事点「念给我听」，永远念不出来。
+let rv_wait = false
 // 「等语音能力探测完就开始念」的待办。
 // 为什么需要它：语音能力是**用时再探**的（见 boot() 里那段注释），所以开机后
 // 第一次念报时 vc_tts 还是 false。rv_start 原来直接拿 vc_tts 判，结论就成了
@@ -2062,6 +2074,7 @@ fn vc_start(){
     vc_accum = ""
     vc_poll_fail = 0
     vc_auto_mic = false
+    vc_mic_retry = 0
     vc_level = 0.0
     vc_note = "正在打开麦克风…"
     vc_sheet_on = true
@@ -2112,7 +2125,9 @@ fn vc_finish_round(send){
         vc_note = "这一句不要了。想再说，点一下话筒。"
         sync_ui()
     } else {
-        vc_note = "没听到内容。麦克风已经关上，可以重说或直接打字。"
+        // 真的一个字都没听到。这里必须给出**可操作**的话 ——
+        //「可以重说」等于没说：用户不知道自己还能做什么（2026-10-13 反馈）。
+        vc_note = "没听到内容。可以查三处：① 系统音量/麦克风有没有静音 ② 设置 → 隐私和安全性 → 麦克风 → 让桌面应用访问、并确认默认输入设备是你的麦克风 ③ 说话时离麦近一点。也可以直接打字对我说。"
         sync_ui()
     }
     vc_close_mic()
@@ -2136,7 +2151,45 @@ fn vc_cancel(){
 
 // 安静下来的收尾：识别器自己报了最终结果（ended / live=false）时调用。
 fn vc_round_ended(){
-    if vc_listen { vc_finish_round(true) }
+    if !vc_listen { return }
+    // ⚠️ 识别器**经常刚开麦就报一次 ended**（麦克风还在热身、或系统刚切过默认
+    // 输入设备），这时候一个字都还没听到。原来直接走 vc_finish_round(true)，
+    // 落地就是那句「没听到内容。麦克风已经关上」—— 用户看到的现象就是
+    // 「点语音对话没反应」（2026-10-13 反馈）。这里改成：一个字都没听到就先
+    // 自己重开一次收音，连着两次都不行才判定为真的没听到。
+    if vc_accum == "" && vc_partial == "" && vc_mic_retry < 2 {
+        vc_mic_retry = vc_mic_retry + 1
+        vc_note = "麦克风刚热起来就断了，正在重开（第 " + ("" + vc_mic_retry) + " 次）…"
+        sync_ui()
+        vc_listen = false
+        vc_close_mic()
+        start_timeout(0.6, || vc_reopen_mic())
+        return
+    }
+    vc_finish_round(true)
+}
+
+// 自动重开一次收音。只有「收音台还开着」才重开 —— 用户自己关掉的就别去打扰。
+// 打不开时不再直接认输：cancelled 竞态下旧会话可能要 1~2 秒才退干净，
+// 连试两次（共用 vc_mic_retry 计数）都失败才关台报错。
+fn vc_reopen_mic(){
+    if !vc_sheet_on { return }
+    if vc_accum != "" || vc_partial != "" { return }
+    host.request("model.listen_start", {language: "zh-CN"}, fn(r){
+        if r.is_ok {
+            vc_listen = true
+            vc_note = "已经重新开麦 —— 说吧，说完点 ↑"
+            sync_ui()
+            start_timeout(0.4, || vc_poll_go())
+        } else if vc_mic_retry < 2 {
+            vc_mic_retry = vc_mic_retry + 1
+            start_timeout(0.8, || vc_reopen_mic())
+        } else {
+            vc_sheet_on = false
+            vc_note = "麦克风打不开：" + r.error
+            sync_ui()
+        }
+    })
 }
 
 // ===== 收音台（豆包式全屏浮层）=====
@@ -2219,9 +2272,24 @@ fn vc_poll_go(){
                             if lv != nil { vc_level = lv }
                         }
                         if k == "error" {
-                            vc_note = "语音识别停了：" + t
-                            vc_sheet_on = false
-                            vc_listen = false
+                            // cancelled = 新会话撞上了还没退干净的旧会话（WinRT
+                            // 同进程同时只容得下一个连续识别会话）。之前直接关
+                            // 收音台报错，用户看到的就是「语音识别停了：cancelled」，
+                            // 再点一次又撞 —— 死循环。现在：一个字都没听到时
+                            // 静默重开（跟 ended 重开共用 vc_mic_retry 计数），
+                            // 连着两次都不行才认输报错。
+                            let is_cancel = t.search("cancel") >= 0
+                            if is_cancel && vc_accum == "" && vc_partial == "" && vc_mic_retry < 2 {
+                                vc_mic_retry = vc_mic_retry + 1
+                                vc_note = "收音通道被上一次占用，正在重开（第 " + ("" + vc_mic_retry) + " 次）…"
+                                vc_listen = false
+                                vc_close_mic()
+                                start_timeout(0.8, || vc_reopen_mic())
+                            } else {
+                                vc_note = "语音识别停了：" + t
+                                vc_sheet_on = false
+                                vc_listen = false
+                            }
                         }
                         if k == "ended" && vc_listen {
                             // 识别器自己收尾 = 读者停下来了：整段发出去。
@@ -3201,9 +3269,9 @@ fn ag_tool_hint(){
 // 对话条上只放一句人话：能力清单太长，摆在下面反而看不清。
 fn ag_caps_line(){
     if vc_tts {
-        return "能调用大模型干活：改设置 · 出报 · 翻页 · 写解读 · 核验 · 画头版 · 查档案与更正台账 · 回放出报过程 · 念编辑方针 · 能说话能听"
+        return "能出报 · 画头版 · 查档案 · 翻页 · 能说能听"
     }
-    "能改设置 · 能出报 · 能翻页 · 能查本报档案 · 能回放过程"
+    "能改设置 · 出报 · 翻页 · 查档案"
 }
 
 fn ag_arg(args, key){
@@ -3589,6 +3657,7 @@ fn ag_reply(r){
         if ag_unfinished() && ag_nudge_more() { return }
         ag_busy = false
         ag_note = "主编 · " + seconds_text((time_now() - ag_t0) * 1000) + " · " + ag_model_text()
+        bl_settle()
         bl_settle()
         ag_trim_log()
         sync_ui()
@@ -4304,6 +4373,124 @@ fn iv_box_line(){
 //   当前这句念完就把话筒交给你；你说完我再从断点接着念。
 //   这是这套宿主能力下，最接近「可打断对话」的做法。
 // =====================================================================
+// =====================================================================
+// 咕嘎的私货 · 念报时夹带的「个人观点」
+// ---------------------------------------------------------------------
+// 念报不能只是「第 N 条 + 标题」—— 咕嘎是本报主编，它得有立场。
+// 所以每念一条，它后面都要跟一句自己的话。规矩只有一条，而且写进了
+// 编辑部宪法（charter 的 guga 条）：**私货必须和事实分得开**。
+// 稿子里的事实来自取数与核验台；这些句子一律以「本鹅」开头，是它说的，
+// 读者一眼能看出哪句是报、哪句是咕嘎。
+//
+// 为什么用本地池子，而不是再问一次模型：
+//   · 念报是一条挨一条接着念的，每条都等一次模型往返会把节奏拖垮
+//     （一次 3~8 秒，十条就是半分钟的空等，中途还容易被打断）；
+//   · 模型一失败整段就哑了，而「念报」这件事不该依赖网络；
+//   · 池子按 (题材 / 档位 + 条号 + 标题长度) 固定取，同一期念两遍听到的是
+//     同一句 —— 复盘和录屏时不会出现「怎么又不一样了」。
+// 想让它更有想法，改这个池子就行，不用碰念报流程。
+// =====================================================================
+let guga_takes = [
+    // ---- 题材优先：读者最容易有共鸣的那一类 ----
+    {k: "chip"   t: "芯片这条本鹅看的是数字，不是口号 —— 数字对得上才算数。"}
+    {k: "chip"   t: "又是芯片。本鹅不嫌多，只看它能不能落到真机器上。"}
+    {k: "chip"   t: "这条本鹅盯着看的是产能和价格，别的都是配菜。"}
+    {k: "ai"     t: "AI 这条本鹅是有点偏心，但偏心归偏心，理由本鹅摆在上面了。"}
+    {k: "ai"     t: "模型一天一个样，本鹅只挑那种明天还站得住的说法。"}
+    {k: "ai"     t: "本鹅劝一句：别被参数吓着，能不能用是另一回事。"}
+    {k: "oss"    t: "开源的，本鹅一律高看一眼 —— 摊在太阳底下给人翻的东西骗不了人。"}
+    {k: "oss"    t: "代码都能翻，这条本鹅信得过，也就敢放在前几条。"}
+    {k: "sec"    t: "安全这条本鹅念得最谨慎，吓人比说错更讨嫌。"}
+    {k: "sec"    t: "漏洞的事宁可说轻一点，本鹅不替它渲染。"}
+    {k: "money"  t: "钱的事本鹅当热闹看，估值涨跌跟饲养员关系其实不大。"}
+    {k: "money"  t: "又是融资。本鹅提醒一句：数大不等于事大。"}
+    // ---- 没有题材命中时，就按信源档位说（这本来也是最该告诉读者的一件事）----
+    {k: "first"  t: "原始出处就在那儿摆着，这条本鹅签得下手。"}
+    {k: "first"  t: "一手料，本鹅最爱这种 —— 别人嚼过一遍的本鹅是不吃的。"}
+    {k: "first"  t: "官方自己开的口，那本鹅就没得挑了，进头版本鹅没意见。"}
+    {k: "first"  t: "本鹅今天翻得最舒服的一页，就是它。"}
+    {k: "second" t: "二手转述，本鹅给它留个心眼：听一半，信一半。"}
+    {k: "second" t: "媒体说的啊…本鹅信七分，剩下三分先替饲养员存着。"}
+    {k: "second" t: "别人家报的，本鹅对着口径看过一遍了，能用。"}
+    {k: "rumor"  t: "这条还在天上飘着呢，本鹅只负责念，不负责背书。"}
+    {k: "rumor"  t: "没影儿的事本鹅也念？念 —— 但你得知道它还没坐实。"}
+    {k: "repost" t: "聚合站扒来的，本鹅顺着链子找过源头，才敢摆在这儿。"}
+    {k: "repost" t: "转载的，本鹅看的是它背后那条原创够不够硬。"}
+    {k: "unknown" t: "这条的来路本鹅没归好档，先念给你听，心里留个底。"}
+]
+
+// 收尾的那一句：咕嘎对整期的看法。同样是本地池子，按当期的
+// 「一手条数 + 淘汰率」分档取 —— 说得跟这一期真有关系，而不是套话。
+let guga_outros = [
+    "今天就念到这儿。本鹅去盯明天的版面了，饲养员，明早见。"
+    "念完了。你要是有意见，冲本鹅来，别冲那三条被本鹅砍掉的。"
+    "就这些。本鹅的私心都在上面了，信不信由你，本鹅不哄人。"
+    "收工。明天同一时间，本鹅还在这儿等你翻报纸。"
+    "念完了 —— 今天这几条，本鹅自己会再想一遍。"
+]
+
+fn guga_pool(kind){
+    let out = []
+    for g in guga_takes {
+        if g.k == kind { out.push(g) }
+    }
+    out
+}
+
+// 不依赖取模运算（脚本里没有 % 的现成用法，别拿它冒险）：减法取余。
+fn guga_mod(v, n){
+    if n <= 0 { return 0 }
+    let x = v
+    while x >= n { x = x - n }
+    while x < 0 { x = x + n }
+    x
+}
+
+fn guga_take_pick(kind, seed){
+    let pool = guga_pool(kind)
+    let n = pool.len()
+    if n == 0 { return "" }
+    pool[guga_mod(seed, n)].t
+}
+
+// 给一条挑一句私货。题材命中就按题材说，否则按信源档位说。
+fn guga_take(r, i){
+    let title = "" + r.title
+    let topic = ""
+    if vc_has(title, "芯片") || vc_has(title, "半导体") || vc_has(title, "GPU") { topic = "chip" }
+    else if vc_has(title, "开源") || vc_has(title, "GitHub") || vc_has(title, "Rust") { topic = "oss" }
+    else if vc_has(title, "安全") || vc_has(title, "漏洞") || vc_has(title, "攻击") { topic = "sec" }
+    else if vc_has(title, "融资") || vc_has(title, "估值") || vc_has(title, "收购") { topic = "money" }
+    else if vc_has(title, "AI") || vc_has(title, "模型") || vc_has(title, "智能体") { topic = "ai" }
+    // 种子 = 条号 × 13 + 标题长度：让同一条在同一期里稳定取到同一句，
+    // 不同条之间又不容易撞（原来只用条号 + 长度，第 1 条和第 4 条撞过同一句）。
+    let seed = i * 13 + title.len()
+    if topic != "" {
+        let t = guga_take_pick(topic, seed)
+        if t != "" { return t }
+    }
+    guga_take_pick(tier_of(r), seed)
+}
+
+fn guga_outro(){
+    let rows = rv_rows()
+    let n = rows.len()
+    if n == 0 { return "今天就到这儿，本鹅明天接着给你盯。" }
+    let f = 0
+    for r in rows {
+        if tier_of(r) == "first" { f = f + 1 }
+    }
+    let mood = ""
+    if f >= 4 { mood = "今天一手料 " + ("" + f) + " 条，本鹅说话难得这么硬气。" }
+    else if f >= 1 { mood = "今天一手料 " + ("" + f) + " 条，剩下的是本鹅替你筛过的二手。" }
+    else { mood = "今天全是转述来的，本鹅念得不太痛快，将就看。" }
+    let on = guga_outros.len()
+    let sign = ""
+    if on > 0 { sign = guga_outros[guga_mod(n + f, on)] }
+    if sign == "" { return mood }
+    mood + " " + sign
+}
+
 // =====================================================================
 // 咕嘎的私货 · 念报时夹带的「个人观点」
 // ---------------------------------------------------------------------
@@ -5746,6 +5933,8 @@ fn sync_ui(){
     ui.ag_note.set_text(ag_line())
     ui.ag_caps.set_text(vc_caps())
     ui.ag_pill.set_text(ag_pill_text())
+    // 气泡开关的文字跟着状态走（pet_toggle_bubble 改完状态会调到这里）
+    ui.pet_bub_b.set_text(pet_bub_text())
     ui.vc_big.set_text(vc_big_text())
     ui.vc_note.set_text(vc_note)
     ui.vc_autob.set_text(vc_auto_text())
@@ -5771,6 +5960,8 @@ fn sync_ui(){
     pet_listen_sync()
     // 浏览记录面板：今天派咕嘎去问过的每一笔都在这儿对账。
     bl_sync()
+    // 读者画像面板：主编记住的主人 —— 跟浏览记录互斥，理由见 pf_open_from_menu。
+    pf_sync()
     // 读者画像面板：主编记住的主人 —— 跟浏览记录互斥，理由见 pf_open_from_menu。
     pf_sync()
     if ag_open { ui.ag_log_box.render() }
@@ -5805,6 +5996,23 @@ fn cg_off(){
     ui.cg_rul.set_text("")
     ui.cg_pet.set_visible(false)
     ui.cg.set_visible(false)
+    ui.cg_movie.set_visible(false)
+}
+
+// ---- 开场 CG · B 方案帧轮播（51 帧 @ 133ms ≈ 6.8 秒）----
+// mp4 没法在 splash 里播，抽帧轮播是等价替代。放完整段自动 cg_off()。
+// ⚠️ splash 没有 % 取模也没有格式化，补零用小函数手写。
+let cg2_i = 0
+fn cg2_pad3(i){
+    let s = "" + i
+    if i < 10 { return "00" + s }
+    if i < 100 { return "0" + s }
+    s
+}
+fn cg2_play(i){
+    if i >= 51 { cg_off() return }
+    ui.cg_movie.set_src(http_resource("{{assets}}/assets/cg/f" + cg2_pad3(i) + ".jpg"))
+    start_timeout(0.133, || cg2_play(i + 1))
 }
 
 // ---- 咕嘎的表情：底部那个常驻编辑形象跟着本报的进度换脸（同一套桌宠贴图）----
@@ -5875,6 +6083,10 @@ let pet_lines = [
     {s: "duty" t: "咕嘎～接了，本鹅这就张罗版面。" e: "surprised" a: "point"}
     {s: "duty" t: "咕嘎嘎～出报这活儿本鹅盯着，你等着。" e: "cheer" a: "point"}
     {s: "duty" t: "咕～这活儿不轻，本鹅去叫编辑部。" e: "pout" a: "peek"}
+    // ---- 接了活（出报这类，先应一声再去干）----
+    {s: "duty" t: "咕嘎～接了，本鹅这就张罗版面。" e: "surprised" a: "point"}
+    {s: "duty" t: "咕嘎嘎～出报这活儿本鹅盯着，你等着。" e: "cheer" a: "point"}
+    {s: "duty" t: "咕～这活儿不轻，本鹅去叫编辑部。" e: "pout" a: "peek"}
     // ---- 今天还没出报，被点了「总结」----
     {s: "nosum" t: "咕嘎？今天还没有版面可以总结，先让本鹅出一期。" e: "surprised" a: "point"}
     // ---- 改体量（小/中/大/特大）----
@@ -5889,6 +6101,10 @@ let pet_lines = [
     // ---- 问完了（自动）----
     {s: "asked" t: "咕嘎～查回来了，都记在浏览记录里了。" e: "cheer" a: "point"}
     {s: "asked" t: "咕嘎嘎～这次的账本，你翻翻看。" e: "cheer" a: "bounce"}
+    // ---- 翻浏览记录（打开面板时）----
+    {s: "browse" t: "咕嘎～今天的账本在这儿，问过什么一条不漏。" e: "pout" a: "point"}
+    {s: "browse" t: "咕嘎嘎～翻吧翻吧，本鹅都记着呢。" e: "cheer" a: "none"}
+    {s: "browse" t: "咕～查过的都在这儿，自己看。" e: "idle" a: "peek"}
     // ---- 翻浏览记录（打开面板时）----
     {s: "browse" t: "咕嘎～今天的账本在这儿，问过什么一条不漏。" e: "pout" a: "point"}
     {s: "browse" t: "咕嘎嘎～翻吧翻吧，本鹅都记着呢。" e: "cheer" a: "none"}
@@ -5923,6 +6139,8 @@ let pet_stock_names = ["idle" "cheer" "pout" "sad" "sleepy" "surprised"]
 // ---- 状态系统（桌宠的饱食度/心情/精力，20 秒一滴、按心情换脸）----
 //   桌宠里这三条是 QTimer 驱动的生命周期，喂食/逗玩/摸摸/打盹各有增减；
 //   卡片里同样保留：数值存在本机 fs（guga_pet.json），换脸由 pg_mood() 决定。
+//   差别在于「谁来补」：桌宠靠玩家点喂食，卡片靠主编台的实干功（总结/出报/换头版…），
+//   见下面的 pg_effect。所以菜单里不再有卖萌按钮，也不该有。
 //   差别在于「谁来补」：桌宠靠玩家点喂食，卡片靠主编台的实干功（总结/出报/换头版…），
 //   见下面的 pg_effect。所以菜单里不再有卖萌按钮，也不该有。
 let pg_hunger = 85.0
@@ -6048,8 +6266,474 @@ let pet_bubble_vis = false
 let pet_listen = false           // 麦克风开着时竖耳朵（惊讶脸）
 let pet_last_phase = ""
 let pet_cur_frame = "idle"
+let pet_cur_src = ""             // 当前已经下发过的贴图路径（重复下发会让桌宠闪）
+// 咕嘎说话要不要冒气泡框。用户要的是「能看见它说的那句话」，所以要有个开关
+// 让他自己决定（工作台顶上那枚「气泡 开/关」）。默认开着。
+let pet_bubble_on = true
 let pet_tick_on = false          // 呼吸/闲时小动作的主循环开关
 let pet_seq_gen = 0              // 动作序列代次：连点企鹅时旧定时器不许推进新序列
+
+// ===== 桌宠的体量与位置 =====
+// 桌面版那只企鹅可以随便拖、随便放大缩小。卡片脚本层没有任何几何 setter
+// （见 OctoScript-App-Design-Flow/docs/SCRIPT-API.md 的「ui.<id>」那一节：
+//  只有 set_text / set_visible / render / set_src / value 这一组），所以这里换一条路：
+//   * 位置 = 一组预先声明好的「占位控件」按二进制开关叠出来的偏移。
+//     要往右挪 137px，就把 128 / 8 / 1 三个占位符打开。
+//     占位符是普通静态控件，只切可见性 —— 隐藏的控件不参与布局（已实测）。
+//   * 体量 = 四只尺寸各写死一份的咕嘎，同一时刻只让一只可见。
+// 全程不碰任何几何字段，所以 GestureView 不会被重建，拖动期间手势不会断
+// （对照：把桌宠放进 on_render 里、拖动中调 render() 重建，会立刻丢掉手势，
+//  实测只收到 phase 0/1 各一次，phase 2 永远不来）。
+// 卡片内容区宽 412、高 723（不含顶部 29px 标题栏）。
+let pet_size_i = 1               // 0 小 / 1 中 / 2 大 / 3 特大
+let pet_px = 6.0                 // 当前位置（卡片内坐标，逻辑点）
+let pet_py = 430.0
+let pet_drag_on = false
+let pet_drag_x0 = 0.0
+let pet_drag_y0 = 0.0
+let pet_pinch_on = false
+let pet_pinch_last = 1.0
+
+fn pet_w_of(i){
+    if i <= 0 { return 60.0 }
+    if i == 1 { return 92.0 }
+    if i == 2 { return 130.0 }
+    170.0
+}
+
+fn pet_h_of(i){
+    if i <= 0 { return 84.0 }
+    if i == 1 { return 128.0 }
+    if i == 2 { return 181.0 }
+    236.0
+}
+
+fn pet_size_name(i){
+    if i <= 0 { return "小" }
+    if i == 1 { return "中" }
+    if i == 2 { return "大" }
+    "特大"
+}
+
+// 把 pet_px / pet_py 拆成二进制，逐位切占位控件的可见性。
+// 顺序必须是「从大到小」：先拿掉权重最大的那一位，剩下的余数再给下一位。
+// 反过来从 1 开始贪心的话，`余数 >= 1` 这一条对任何正数都成立，
+// 前八位会全亮，位置会永远卡在 255（这个坑实测踩过）。
+// 只在「整数位置真的变了」时才调用 —— 鼠标每个移动事件都发二十来个宿主调用不值得。
+fn pet_spacers_sync(){
+    let bx = pet_px
+    let sx256 = bx >= 256.0
+    if sx256 { bx = bx - 256.0 }
+    let sx128 = bx >= 128.0
+    if sx128 { bx = bx - 128.0 }
+    let sx64 = bx >= 64.0
+    if sx64 { bx = bx - 64.0 }
+    let sx32 = bx >= 32.0
+    if sx32 { bx = bx - 32.0 }
+    let sx16 = bx >= 16.0
+    if sx16 { bx = bx - 16.0 }
+    let sx8 = bx >= 8.0
+    if sx8 { bx = bx - 8.0 }
+    let sx4 = bx >= 4.0
+    if sx4 { bx = bx - 4.0 }
+    let sx2 = bx >= 2.0
+    if sx2 { bx = bx - 2.0 }
+    let sx1 = bx >= 1.0
+    ui.px256.set_visible(sx256)
+    ui.px128.set_visible(sx128)
+    ui.px64.set_visible(sx64)
+    ui.px32.set_visible(sx32)
+    ui.px16.set_visible(sx16)
+    ui.px8.set_visible(sx8)
+    ui.px4.set_visible(sx4)
+    ui.px2.set_visible(sx2)
+    ui.px1.set_visible(sx1)
+
+    let by = pet_py
+    let sy512 = by >= 512.0
+    if sy512 { by = by - 512.0 }
+    let sy256 = by >= 256.0
+    if sy256 { by = by - 256.0 }
+    let sy128 = by >= 128.0
+    if sy128 { by = by - 128.0 }
+    let sy64 = by >= 64.0
+    if sy64 { by = by - 64.0 }
+    let sy32 = by >= 32.0
+    if sy32 { by = by - 32.0 }
+    let sy16 = by >= 16.0
+    if sy16 { by = by - 16.0 }
+    let sy8 = by >= 8.0
+    if sy8 { by = by - 8.0 }
+    let sy4 = by >= 4.0
+    if sy4 { by = by - 4.0 }
+    let sy2 = by >= 2.0
+    if sy2 { by = by - 2.0 }
+    let sy1 = by >= 1.0
+    ui.py512.set_visible(sy512)
+    ui.py256.set_visible(sy256)
+    ui.py128.set_visible(sy128)
+    ui.py64.set_visible(sy64)
+    ui.py32.set_visible(sy32)
+    ui.py16.set_visible(sy16)
+    ui.py8.set_visible(sy8)
+    ui.py4.set_visible(sy4)
+    ui.py2.set_visible(sy2)
+    ui.py1.set_visible(sy1)
+}
+
+fn pet_set_pos(x, y){
+    let w = pet_w_of(pet_size_i)
+    let h = pet_h_of(pet_size_i)
+    let maxx = 412.0 - w - 4.0
+    let maxy = 723.0 - h - 4.0
+    if maxx < 4.0 { maxx = 4.0 }
+    if maxy < 4.0 { maxy = 4.0 }
+    if x < 4.0 { x = 4.0 }
+    if x > maxx { x = maxx }
+    if y < 4.0 { y = 4.0 }
+    if y > maxy { y = maxy }
+    let nx = floor(x)
+    let ny = floor(y)
+    if nx == pet_px && ny == pet_py { return }
+    pet_px = nx
+    pet_py = ny
+    pet_spacers_sync()
+}
+
+fn pet_size_sync(){
+    ui.pet_s.set_visible(pet_size_i <= 0)
+    ui.pet_m.set_visible(pet_size_i == 1)
+    ui.pet_l.set_visible(pet_size_i == 2)
+    ui.pet_xl.set_visible(pet_size_i >= 3)
+}
+
+fn pet_set_size(i){
+    if i < 0 { i = 0 }
+    if i > 3 { i = 3 }
+    if i == pet_size_i { return }
+    pet_size_i = i
+    pet_size_sync()
+    // 换小了可能压到边界，重新钳一次
+    pet_set_pos(pet_px, pet_py)
+    pet_geo_save()
+    pet_say_line(pet_pick(pet_lines_of("size")), false)
+}
+
+// 拖动：dx/dy 是相对按下的累计偏移（宿主 GestureView 的口径）。
+// 拖的过程里只切占位控件，绝不重建桌宠本体 —— 这是手势能一路跟到 phase 2 的原因。
+fn pet_pan(dx, dy, phase){
+    if phase == 0 {
+        pet_drag_on = true
+        pet_drag_x0 = pet_px
+        pet_drag_y0 = pet_py
+        pet_line = "咕嘎～轻点放，本鹅会头晕的。"
+        pet_line_until = time_now() + 2.0
+        pet_sync_bubble()
+        return
+    }
+    if phase == 1 {
+        pet_set_pos(pet_drag_x0 + dx, pet_drag_y0 + dy)
+        return
+    }
+    pet_set_pos(pet_drag_x0 + dx, pet_drag_y0 + dy)
+    pet_drag_on = false
+    pet_geo_save()
+}
+
+// 捏合缩放（触屏；鼠标上不产生这个事件）—— 用累计倍数跨过阈值就换一档。
+fn pet_pinch(scale, px, py, phase){
+    if phase == 0 { pet_pinch_on = true  pet_pinch_last = 1.0  return }
+    if !pet_pinch_on { return }
+    if scale >= pet_pinch_last + 0.45 {
+        pet_pinch_last = scale
+        pet_set_size(pet_size_i + 1)
+    }
+    else if scale <= pet_pinch_last - 0.28 {
+        pet_pinch_last = scale
+        pet_set_size(pet_size_i - 1)
+    }
+    if phase == 2 { pet_pinch_on = false }
+}
+
+// ===== 今日晨报 · 浏览记录 =====
+// 饲养员让咕嘎去问什么、问了哪几类、查到几条、都是什么标题，一条条记下来，
+// 落盘 ask_log.json（按天分组，只留最近三天）。这是「问主编」这条路的账本。
+let bl_items = []                // [{d: 日期, kind: 品类, q: 原话, n: 条数, top: 标题串, st: 状态}]
+let bl_open = false
+let bl_pending = -1              // 正在等主编回话的那一条的序号；-1 = 没有
+let bl_loaded = false
+let bl_last_harvest = ""
+
+fn bl_load(){
+    if bl_loaded { return }
+    bl_loaded = true
+    if !fs.exists("ask_log.json") { return }
+    let v = fs.read("ask_log.json").parse_json()
+    if v == nil { return }
+    let its = v["items"]
+    if its == nil { return }
+    let today = today_text()
+    for it in its {
+        let d = ""
+        if it["d"] != nil { d = "" + it["d"] }
+        if d != today { continue }
+        let one = {d: d kind: "" q: "" n: 0 top: "" st: ""}
+        if it["kind"] != nil { one.kind = "" + it["kind"] }
+        if it["q"] != nil { one.q = "" + it["q"] }
+        if it["n"] != nil { one.n = it["n"] }
+        if it["top"] != nil { one.top = "" + it["top"] }
+        if it["st"] != nil { one.st = "" + it["st"] }
+        bl_items.push(one)
+    }
+}
+
+fn bl_save(){
+    let today = today_text()
+    let keep = []
+    for it in bl_items {
+        if it.d == today { keep.push(it) }
+    }
+    fs.write("ask_log.json", {schema: 1 saved_at: time_now() items: keep}.to_json())
+}
+
+// 记一条「正在查」。等主编把结果端回来再回填条数与标题。
+fn bl_begin(kind, q){
+    bl_load()
+    bl_start_fin = "" + finished_at
+    let one = {d: today_text() kind: kind q: q n: 0 top: "" st: "正在联网查"}
+    bl_items.push(one)
+    bl_pending = bl_items.len() - 1
+    bl_save()
+    bl_sync()
+    return bl_pending
+}
+
+// 主编那边一旦把这一期做出来（phase 走到 done），就把真结果回填进刚才那条。
+// 挂在这里而不是和模型回调耦合：出报路径只有一条，phase 是它唯一的收敛信号。
+fn bl_harvest(){
+    if bl_pending < 0 { return false }
+    if phase != "done" { return false }
+    let key = "" + finished_at
+    if key == bl_last_harvest { return false }
+    bl_last_harvest = key
+    let i = bl_pending
+    bl_pending = -1
+    if i < 0 || i >= bl_items.len() { return false }
+    let one = bl_items[i]
+    let n = picked.len()
+    one.n = n
+    let tops = ""
+    let c = 0
+    for r in picked {
+        if c >= 3 { break }
+        let tt = ""
+        if r["title"] != nil { tt = "" + r["title"] }
+        if tt != "" {
+            if c > 0 { tops = tops + " ／ " }
+            tops = tops + art_cut(tt, 26)
+        }
+        c = c + 1
+    }
+    one.top = tops
+    if n > 0 { one.st = "已汇总" } else { one.st = "没查到干净的条目" }
+    bl_items[i] = one
+    bl_save()
+    bl_sync()
+    bl_log_line()
+    true
+}
+
+// 主编这条路走不通时，把「正在联网查」那条如实收尾。
+// 一条永远停在「正在查」的记录，比一条写着失败原因的记录更误导人 ——
+// 饲养员会以为查询还在跑，其实早就断了。
+fn bl_fail(why){
+    if bl_pending < 0 { return }
+    let i = bl_pending
+    bl_pending = -1
+    if i < 0 || i >= bl_items.len() { return }
+    let one = bl_items[i]
+    one.st = "没查成：" + art_cut(why, 26)
+    bl_items[i] = one
+    bl_save()
+    bl_sync()
+    ag_log.push({who: "tool" text: "浏览记录 +1：" + one.kind + " · " + one.st})
+    ag_trim_log()
+}
+
+// 一轮对话收尾时调用。出报成功的那条由 bl_harvest 回填（phase 走到 done），
+// 这里只管「这一轮压根没出报」的情况，避免记录悬着。
+fn bl_settle(){
+    if bl_pending < 0 { return }
+    // 只有「这一轮把新一期做出来了」才算查成 —— finished_at 变了才是新一期，
+    // 否则会拿上一期的 picked 充数，把这次询问误记成「已汇总」。
+    if ("" + finished_at) != bl_start_fin {
+        if bl_harvest() { return }
+    }
+    bl_fail("主编这一轮没出报")
+}
+
+fn bl_text(i){
+    if i < 0 || i >= bl_items.len() { return "" }
+    let one = bl_items[i]
+    let head = "" + one.kind + " · " + ("" + one.n) + " 条 · " + ("" + one.st)
+    // 时间戳只取「今天 + 序号」，够认出来是哪一次问的即可
+    "第 " + ("" + (i + 1)) + " 次询问  " + head
+}
+
+fn bl_top_text(i){
+    if i < 0 || i >= bl_items.len() { return "" }
+    let one = bl_items[i]
+    if one.top != "" { return one.top }
+    if one.q != "" { return "问的是：" + art_cut(one.q, 30) }
+    ""
+}
+
+fn bl_sync(){
+    bl_load()
+    ui.bl_panel.set_visible(bl_open)
+    ui.bl_pill.set_text(bl_pill_text())
+    if !bl_open { return }
+    let n = bl_items.len()
+    ui.bl_head.set_text(bl_head_text())
+    ui.bl_r1_head.set_text(bl_text(n - 1))
+    ui.bl_r1_top.set_text(bl_top_text(n - 1))
+    ui.bl_r1.set_visible(n >= 1)
+    ui.bl_r2_head.set_text(bl_text(n - 2))
+    ui.bl_r2_top.set_text(bl_top_text(n - 2))
+    ui.bl_r2.set_visible(n >= 2)
+    ui.bl_r3_head.set_text(bl_text(n - 3))
+    ui.bl_r3_top.set_text(bl_top_text(n - 3))
+    ui.bl_r3.set_visible(n >= 3)
+    ui.bl_empty.set_visible(n == 0)
+}
+
+fn bl_head_text(){
+    bl_load()
+    let n = bl_items.len()
+    if n == 0 { return "今天还没问过我什么。" }
+    "今天问了 " + ("" + n) + " 次，账都记在这儿"
+}
+
+fn bl_pill_text(){
+    // 这一行五个胶囊是均分面板宽度的，每个只有 ~58px。
+    // 写「📋 浏览记录」会被裁成「浏」—— 保持两字，跟 聊天/出报/配图/分析 齐平。
+    if bl_open { return "收起" }
+    "记录"
+}
+
+fn bl_toggle(){
+    bl_open = !bl_open
+    if bl_open { pf_open = false }
+    bl_sync()
+    pf_sync()
+}
+
+// =====================================================================
+// 读者画像面板 · 主编台「画像」
+//   摆出来的都是 pf_* 里已有的真数据（profile.json，只存本机）：
+//   出过几期、读过几条、常读哪几类各多少次、你亲口要它记住的偏好。
+//   两个按钮也都是真动作：「记一条偏好」把输入行交给主人去说（主编会用
+//   remember_reader 落库）；「照着画像排一期」直接把画像当作选材依据发过去。
+// =====================================================================
+fn pf_sync(){
+    ui.pf_panel.set_visible(pf_open)
+    if !pf_open { return }
+    ui.pf_head.set_text(pf_head_text())
+    ui.pf_stat.set_text(pf_stat_text())
+    ui.pf_focus.set_text(pf_focus_text())
+    ui.pf_notes_head.set_text(pf_notes_head_text())
+    ui.pf_notes_lbl.set_text(pf_notes_line())
+}
+
+fn pf_head_text(){
+    // 标题只留一行。「还不认识你」这层意思下面 pf_stat/pf_focus 已经说清了，
+    // 头一行再拖一句解释会折成两行，把面板顶高一截。
+    if pf_briefs == 0 && pf_opens == 0 && pf_notes.len() == 0 { return "主编还不认识你" }
+    "主编记住的你"
+}
+
+fn pf_stat_text(){
+    "已出报 " + ("" + pf_briefs) + " 期 · 读过 " + ("" + pf_opens) + " 条 · 只存在这台机器上，不上传"
+}
+
+fn pf_focus_text(){
+    let out = ""
+    for t in pf_t {
+        if t.n > 0 {
+            if out != "" { out = out + " · " }
+            out = out + pf_label(t.id) + " " + ("" + t.n) + " 次"
+        }
+    }
+    if out == "" { return "常读：还没看出偏向 —— 多读几条，它就知道了。" }
+    "常读：" + out
+}
+
+fn pf_notes_head_text(){
+    let n = pf_notes.len()
+    if n == 0 { return "你亲口要它记住的：还没有" }
+    "你亲口要它记住的 " + ("" + n) + " 条"
+}
+
+fn pf_open_from_menu(){
+    // 「画像」这一格：收主编台、开画像面板。
+    // 与浏览记录面板同位（同一竖排），两个同时开会顶到卡片外面，所以互斥。
+    pet_menu_close()
+    pf_open = true
+    bl_open = false
+    pf_sync()
+    bl_sync()
+    pet_say_line(pet_pick(pet_lines_of("profile")), false)
+}
+
+fn pf_toggle(){
+    pf_open = !pf_open
+    if pf_open { bl_open = false }
+    pf_sync()
+    bl_sync()
+}
+
+// 「记一条偏好」：不开新面板，直接把主编的输入行交给主人 ——
+// 偏好必须是主人亲口说的，卡里不替他编。主编收到后会调 remember_reader 落库。
+fn pf_add_hint(){
+    pf_open = false
+    pf_sync()
+    ag_open = true
+    ag_note = "说一条要我长期记住的偏好（比如「多关注开源社区」），我记下来，以后每一期都算数。"
+    sync_ui()
+    pet_say_line(pet_pick(pet_lines_of("profile")), false)
+}
+
+// 「照着画像排一期」：把画像当唯一选材依据发给主编，让它先出计划再取数。
+fn pf_use(){
+    pet_work_done("read")
+    pf_open = false
+    pf_sync()
+    pet_say_line(pet_pick(pet_lines_of("plan")), false)
+    ag_take("照着我的读者画像给我排一期：只挑我常读的那几类，别按大众口味选。先给我取数计划。",
+        "主编接手了：按你的画像选材。")
+}
+
+// 把一次询问写进主编的对话里（沿用主编那套 22 件工具的链路，
+// 它自己会去联网取数、筛选、落到本报上）。
+fn bl_log_line(){
+    let n = bl_items.len()
+    if n == 0 { return }
+    let one = bl_items[n - 1]
+    ag_log.push({who: "tool" text: "浏览记录 +1：" + one.kind + " · " + ("" + one.n) + " 条 · " + art_cut(one.top, 40)})
+    ag_trim_log()
+}
+
+// 向主编问某品类：界面上立刻亮一条「正在查」，再让主编去干活。
+fn bl_ask(kind, q){
+    bl_load()
+    bl_begin(kind, q)
+    if !ag_open {
+        ag_open = true
+        ag_note = "主编正在替你跑这一条。"
+    }
+    ag_say(q)
+    bl_sync()
+}
 
 // ===== 桌宠的体量与位置 =====
 // 桌面版那只企鹅可以随便拖、随便放大缩小。卡片脚本层没有任何几何 setter
@@ -6269,6 +6953,11 @@ let bl_pending = -1              // 正在等主编回话的那一条的序号�
 let bl_loaded = false
 let bl_last_harvest = ""
 let bl_start_fin = ""            // 这次询问发起时的 finished_at，用来判断「这一轮真的出了新一期」
+
+// ===== 读者画像面板（主编台「画像」）=====
+// 数据本身早就有（pf_* 系列，落盘 profile.json），这一版只是把它摆到主编台上：
+// 主人被记住的历史喜好要看得见、能补、能直接拿去选新闻，而不是藏在代码里。
+let pf_open = false
 
 // ===== 读者画像面板（主编台「画像」）=====
 // 数据本身早就有（pf_* 系列，落盘 profile.json），这一版只是把它摆到主编台上：
@@ -6611,12 +7300,28 @@ fn pet_frame_src(name){
 fn pet_frame_set(name){
     if name == pet_cur_frame { return }
     pet_cur_frame = name
-    // 四只尺寸各有一张图，同一帧必须一起换 ——
-    // 只换当前那只的话，一改尺寸就会停在旧帧上（表情卡住）。
-    ui.pet_img_s.set_src(http_resource(pet_frame_src(name)))
-    ui.pet_img_m.set_src(http_resource(pet_frame_src(name)))
-    ui.pet_img_l.set_src(http_resource(pet_frame_src(name)))
-    ui.pet_img_xl.set_src(http_resource(pet_frame_src(name)))
+    pet_src_apply()
+}
+
+// 给「当前这一只」换图。
+//
+// 为什么不再一次给四只都 set_src：说话口型是每 0.16 秒一帧、动作序列
+// 0.10~0.20 秒一帧，点一下企鹅会连着换好几次帧 —— 一次给四只都下发，
+// 一秒钟就是几十次贴图重载，每次都会让画面闪一下。用户看到的就是
+// 「点一下桌宠就时不时闪烁」（2026-10-13 反馈）。
+//
+// 四只里同一时刻只有一只是可见的（pet_size_sync 管可见性），所以只喂那一只；
+// 换尺寸时由 pet_size_sync 补一次，不会漏。
+fn pet_src_apply(){
+    if pet_cur_frame == "" { return }
+    let src = pet_frame_src(pet_cur_frame)
+    if src == pet_cur_src { return }          // 同一张图重复下发是纯浪费，也是闪的来源
+    pet_cur_src = src
+    let u = http_resource(src)
+    if pet_size_i <= 0 { ui.pet_img_s.set_src(u) }
+    else if pet_size_i == 1 { ui.pet_img_m.set_src(u) }
+    else if pet_size_i == 2 { ui.pet_img_l.set_src(u) }
+    else { ui.pet_img_xl.set_src(u) }
 }
 
 fn pet_breath_frame(expr){
@@ -6625,10 +7330,12 @@ fn pet_breath_frame(expr){
 }
 
 fn pet_sync_bubble(){
-    // 菜单打开时也让气泡留着：气泡和主编台在同一个竖排（Down 流）里，
-    // 气泡在上、面板在下，一起从底部往上长，不会互相盖住。
-    // 打开状态的那句「说话」本身就是菜单的反馈，藏掉反而像没反应。
-    let show = pet_line != "" && time_now() < pet_line_until && !ag_open
+    // 气泡什么时候冒：
+    //   ① 有话要说（pet_line 非空、还没到点）
+    //   ② 气泡开关开着（工作台标题栏那枚「气泡 开/关」——用户点名要的开关）
+    //   ③ 工作台没开（工作台一开，咕嘎的话直接进对话区，气泡和面板
+    //      同住右下角会叠在一起；关掉工作台气泡立刻恢复）
+    let show = pet_line != "" && time_now() < pet_line_until && !ag_open && pet_bubble_on
     if show == pet_bubble_vis {
         if show { ui.pet_bubble_lbl.set_text(pet_line) }
         return
@@ -6636,6 +7343,37 @@ fn pet_sync_bubble(){
     pet_bubble_vis = show
     ui.pet_bubble.set_visible(show)
     if show { ui.pet_bubble_lbl.set_text(pet_line) }
+}
+
+// 气泡开关（工作台标题栏那枚）。用户原话：「咕嘎主编说的话能有气泡框
+//（可以在工作台选择关闭）」—— 所以开关放在工作台顶上，一点就换。
+// 关掉之后它照样说话、照样有声音（念报、点它时的碎嘴都不受影响），
+// 只是不再在卡片上冒气泡 —— 留给专心读报、不想被气泡挡住的饲养员。
+//
+// ⚠️ 别写成 `pet_bubble_on ? "开" : "关"` —— splash **没有 C 风格三元表达式**，
+// `?` 会被解析成「命名函数参数」语法，直接报
+// 「named_fn_arg called without prototype object」并中断整次求值。
+// 2026-10-13 实测：这一行把 warm_static 和 sync_ui 各腰斩一次，
+// 后面所有控件的 set_text 全没执行（不进布局）——语音按钮、分区按钮
+// 全都"消失"，查了半天。条件取值一律用 if 包个小函数。
+fn pet_bub_text(){
+    if pet_bubble_on { return "气泡 开" }
+    "气泡 关"
+}
+
+fn pet_toggle_bubble(){
+    pet_bubble_on = !pet_bubble_on
+    if pet_bubble_on {
+        // 打开时用一句话自证「气泡长这样」，不然开关像没生效。
+        pet_line = "咕～气泡打开了，本鹅说话都会冒在这儿。"
+        pet_line_until = time_now() + 2.6
+        pet_sync_bubble()
+    } else {
+        pet_line = ""
+        pet_line_until = 0
+        pet_sync_bubble()
+    }
+    sync_ui()
 }
 
 fn pet_apply(){
@@ -6653,6 +7391,9 @@ fn pet_apply(){
 }
 
 fn pet_run_seq(name){
+    // 工作台开着不播动作序列 —— 理由同 pet_talk_tick：每 0.1~0.3 秒
+    // 换一张贴图，换帧间隙就是闪。关掉工作台动作照播。
+    if ag_open { return }
     pet_seq_gen = pet_seq_gen + 1
     pet_act = name
     pet_seq_q = []
@@ -6721,6 +7462,10 @@ fn pet_talk_go(){
 fn pet_talk_tick(){
     if !pet_talk_on { return }
     if time_now() >= pet_talk_until { pet_talk_stop() return }
+    // 工作台开着时，咕嘎的话直接进对话区，口型动画就省了。
+    // 口型是每 0.16 秒换一次贴图 —— makepad 换贴图有一瞬加载间隙，
+    // 就是用户看到的「点开工作台以后时不时闪烁」的主源（2026-10-13）。
+    if ag_open { return }
     if pet_act != "" { return }   // 动作帧优先，口型等动作播完再动
     pet_talk_t = pet_talk_t + 1
     if pet_talk_t > 4 { pet_talk_t = 1 }
@@ -6807,6 +7552,9 @@ fn wb_open(i){
     ag_open = true
     wb_tab = i
     if ag_open { pet_line = "" }
+    pet_dodge_wb()
+    // 直接开在「往期」分区时，同 wb_pick：先把留存下来的最近几期摆出来。
+    if i == 2 && wb_arc_res.len() == 0 && issues.len() > 0 { wb_quick("") return }
     sync_ui()
 }
 
@@ -6818,13 +7566,18 @@ fn wb_close(){
 
 fn wb_pick(i){
     wb_tab = i
+    // 切到「往期」时先把最近几期摆出来 —— 用户要的是「生成的晨报会留存
+    // 下来、一打开就能看见」，而不是一个空白输入框等着他敲字。
+    if i == 2 && wb_arc_res.len() == 0 && issues.len() > 0 { wb_quick("") return }
     sync_ui()
 }
 
 fn wb_tab_text(i){
+    // 用户点名要的三个必须项：对话（语音 + 输入）、干活（今天这一期）、
+    // 往期（检索历史晨报）。「档案」这个词太机关，改成「往期」一眼就懂。
     let lab = "对话"
     if i == 1 { lab = "干活" }
-    if i == 2 { lab = "档案" }
+    if i == 2 { lab = "往期" }
     if wb_tab == i { return "● " + lab }
     lab
 }
@@ -7003,6 +7756,11 @@ fn pet_breath_tick(){
         pet_sync_bubble()
     }
     if pet_act != "" || pet_talk_on { return }
+    // 工作台开着 → 整只鹅静止：呼吸帧（每 4 秒 expr ↔ expr_breath）
+    // 和闲置小动作（bounce/peek/tsundere，每 10~25 秒一次）全都是
+    // 「换贴图」，每次换都有加载间隙 —— 压在面板边上就是一闪。
+    // 关掉工作台一切照旧。
+    if ag_open { return }
     // 呼吸每 2 拍换一次帧（4 秒一个来回，跟桌宠的呼吸周期一致）。
     // 每拍都换 = 1Hz 硬切，实机上整只企鹅在闪 —— 用户第一句反馈就是它。
     pet_breath_gate = 1 - pet_breath_gate
@@ -7105,6 +7863,8 @@ fn warm_static(){
     ui.iv_hide.set_text("收起")
     ui.ag_title.set_text("咕嘎 · 工作台")
     ui.ag_badge.set_text("常驻")
+    // 气泡开关：咕嘎说话冒不冒气泡，用户在工作台上一点就换（默认开）。
+    ui.pet_bub_b.set_text(pet_bub_text())
     ui.ag_clear_b.set_text("清空")
     ui.ag_hide_b.set_text("收起")
     ui.vc_big.set_text("🎙 语音对话")
@@ -7114,8 +7874,8 @@ fn warm_static(){
     ui.vc_who.set_text("咕嘎在听")
     ui.vc_cancelb.set_text("×")
     ui.vc_sendb.set_text("↑")
-    ui.pet_menu_head.set_text("形体 · 想让本鹅多大只")
-    // 形体
+    // 形体（原来还有一行「形体 · 想让本鹅多大只」标题，跟控件一起删了 ——
+    // 用户要清爽，四个尺寸胶囊自己会说话）
     ui.pet_s1.set_text("小")
     ui.pet_s2.set_text("中")
     ui.pet_s3.set_text("大")
@@ -7134,9 +7894,8 @@ fn warm_static(){
     ui.pet_k3.set_text("芯片")
     ui.pet_k4.set_text("国际")
     ui.pet_k5.set_text("生活")
-    // 主编直接指挥卡片里的活儿（一行五个，文案保持两字以内，别把面板撑出去）
-    ui.pet_c1.set_text("聊天")
-    ui.pet_c2.set_text("出报")
+    // 直接指挥（原来五个：聊天/出报/配图/分析/记录。聊天与出报跟对话分区的
+    // 输入行重复，删掉；剩三个是对话替代不了的。文案保持两字以内）
     ui.pet_c3.set_text("配图")
     ui.pet_c4.set_text("分析")
     ui.bl_pill.set_text("记录")
@@ -7155,10 +7914,14 @@ fn boot(){
     // splash 里未捕获的错误会立即终止本次求值（vm.rs:861），函数一旦中途中止，
     // 剩下的语句（包括定时器注册）就全部作废。cg_off() 原来排在函数最后一行，
     // 只要前面任何一步恢复读盘抛错，CG 就永远盖着 → 白屏。
-    // 现在先挂定时器：后面无论谁炸，CG 都会在 3.12 秒后按时关掉。
+    // 现在先挂定时器：后面无论谁炸，CG 都会按时关掉。
+    // B 方案帧轮播（6.8 秒）取代原 3.12 秒的 shader 动画 —— 帧链自己会在
+    // 第 51 帧后调 cg_off()；这个兜底定时器只在帧链意外中断时救场。
+    start_timeout(8.0, || cg_off())
+    start_timeout(0.15, || cg2_play(0))
+    // 原文字动画保留（被帧层盖住，无妨；万一帧加载慢还能露出文字兜底）
     start_timeout(1.10, || cg_text())
     start_timeout(1.46, || cg_pet_in())
-    start_timeout(3.12, || cg_off())
     // 档位查表必须先建：取数时每一条都要判档位，建表一次、查表 O(1)。
     // 忘了这一步的后果是静默的 —— 所有域名都落到兜底的「二手」，不报错。
     tier_map_build()
@@ -8182,6 +8945,20 @@ fn guga_voice_name(){
     "音色 " + vc_voice
 }
 
+// 当前这把嗓子叫什么（给人看的名字）。
+// 为什么要显示出来：主编就是咕嘎，报里报外必须**只有一把嗓子**。
+// 以前这事儿看不出来 —— 读者只会觉得「主编怎么跟桌宠不是一个人」。
+// 现在选中的是哪把嗓子直接写在状态行里，出问题一眼能定位
+// （比如显示成「系统音色 …Huihui」就说明语音桥没被宿主接上）。
+fn guga_voice_name(){
+    if vc_voice == "" { return "宿主默认音色" }
+    if vc_has(vc_voice, "Xiaoyi") { return "软萌少女音 · 与桌面版桌宠同款" }
+    if vc_has(vc_voice, "Xiaoxiao") { return "年轻女声 · 云端神经音色" }
+    if vc_has(vc_voice, "Yaoyao") { return "系统少女音" }
+    if vc_has(vc_voice, "Huihui") { return "系统音色（成熟女声，偏机械）" }
+    "音色 " + vc_voice
+}
+
 HostedView{width: Fill height: Fill
     full: View{width: Fill height: Fill flow: Overlay show_bg: true draw_bg.color: ground
         browse := ScrollYView{width: Fill height: Fill flow: Down spacing: 14 padding: Inset{left: 16 right: 16 top: 16 bottom: 300}
@@ -8849,25 +9626,32 @@ HostedView{width: Fill height: Fill
                 }
             }
         }
-        ag_dock := View{width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.0}
-            // ===== 咕嘎 · 工作台（三合一：对话 / 干活 / 档案）=====
-            // 「说话」与「咕嘎」原来是底栏两个并列入口，现在都收进这一块：
-            //   对话 = 语音对话（豆包式收音条）+ 与主编的文字/语音往来
-            //   干活 = 原来主编台那一整页（形体 / 今天这一期 / 问新闻 / 直接指挥）
-            //   档案 = 按时间查往期晨报、收藏往期
-            // 咕嘎是这里唯一的管理员：点它开台，台面上所有事都是「派给它」。
-            ag_panel := RoundedView{visible: false width: Fill height: Fit flow: Down spacing: 9
+        ag_dock := View{width: Fill height: Fill flow: Down align: Align{x: 1.0 y: 1.0}
+            padding: Inset{right: 10 bottom: 58}
+            // ===== 咕嘎 · 工作台（浮在咕嘎旁边的小卡片）=====
+            // 用户反馈（2026-10-13）：原来是**整屏遮罩**，一打开就把整张卡片盖住，
+            // 「我要的是工作台在咕嘎旁边，不是把卡片盖掉」。
+            // 现在：靠右下角停、宽 352（卡宽 412），高度靠各分区自己收着，
+            // 上方始终留着 300 多像素能看见卡片本体；底部让开那个「咕嘎·工作台」胶囊。
+            ag_panel := RoundedView{visible: false width: 352 height: Fit flow: Down spacing: 6
                 // f2 = 94% 不透明：底下的品类胶囊不再从面板里透出来（截图里
                 // 看着像重影），同时保住一点点夜色通透感。
-                new_batch: true draw_bg.color: #x141a27f2 draw_bg.border_radius: 18.0
-                padding: Inset{top: 12 bottom: 14 left: 14 right: 14}
-                View{width: Fill height: Fit flow: Right spacing: 7 align: Align{y: 0.5}
+                new_batch: true draw_bg.color: #x141a27f7 draw_bg.border_radius: 18.0
+                padding: Inset{top: 8 bottom: 9 left: 13 right: 13}
+                View{width: Fill height: Fit flow: Right spacing: 6 align: Align{y: 0.5}
                     ag_title := Label{text: "" draw_text.color: #xffe2b8 draw_text.text_style: theme.font_bold{font_size: 13}}
                     ag_badge := Label{text: "" draw_text.color: #x6d7d9c draw_text.text_style.font_size: 9}
-                    ag_note := Label{width: Fill text: "" max_lines: 2 draw_text.color: #x93a4c6 draw_text.text_style.font_size: 10}
+                    View{width: Fill height: 1}
+                    pet_bub_b := ChipDk{text: "" on_click: || pet_toggle_bubble()}
                     ag_clear_b := BarBtn{text: "" on_click: || ag_clear()}
                     ag_hide_b := BarBtn{text: "" on_click: || wb_close()}
                 }
+                // ⚠️ ag_note 这里**不能删**：它既是脚本里的状态变量（ag_note = …），
+                // 也是这个界面控件（sync_ui 里 ui.ag_note.set_text(ag_line())）。
+                // 删掉控件，那行 set_text 就会抛错 —— 读一个不存在的控件名同样会
+                // 中断整次求值（见 load_last 那条注释）。它也是读者唯一能看到
+                // 「主编这次没有答复」的地方，必须留着。
+                ag_note := Label{width: Fill text: "" max_lines: 2 draw_text.color: #x93a4c6 draw_text.text_style.font_size: 10}
                 // 三分区切换：当前那枚前面带 ●（见 wb_tab_text）
                 View{width: Fill height: Fit flow: Right spacing: 6
                     wb_b0 := ChipDk{text: "" on_click: || wb_pick(0)}
@@ -8881,10 +9665,14 @@ HostedView{width: Fill height: Fill
                         vc_contb := ChipDk{text: "" on_click: || vc_toggle_cont()}
                         vc_autob := ChipDk{text: "" on_click: || vc_toggle_auto()}
                     }
-                    vc_note := Label{width: Fill text: "" max_lines: 2 draw_text.color: #x93a4c6 draw_text.text_style.font_size: 10}
-                    ag_caps := Label{width: Fill text: "" max_lines: 2 draw_text.color: #x6f7f9e draw_text.text_style.font_size: 9}
+                    vc_note := Label{width: Fill text: "" max_lines: 1 draw_text.color: #x93a4c6 draw_text.text_style.font_size: 10}
+                    ag_caps := Label{width: Fill text: "" max_lines: 1 draw_text.color: #x6f7f9e draw_text.text_style.font_size: 9}
                     ag_iv := Label{visible: false width: Fill text: "" draw_text.color: #x8fe0b0 draw_text.text_style.font_size: 9}
-                    ag_log_box := ScrollYView{width: Fill height: 206 flow: Down spacing: 5
+                    // 对话记录（65 高 ≈ 一条半消息，可滚动）。
+                    // 为什么压这么矮：工作台要和桌宠在竖向上「住得下」——
+                    // 实测（_wbgeo.py）面板高 510 时顶部到 y=115，而桌宠让位后
+                    // 底部最低只能到 166，压到 65 高面板顶退到 ~185 才不重叠。
+                    ag_log_box := ScrollYView{width: Fill height: 65 flow: Down spacing: 5
                         on_render: || {
                             if ag_log.len() == 0 {
                                 Label{width: Fill text: "试着对我说：只看芯片和 AI，生成今天的晨报。" draw_text.color: #x7c8db0 draw_text.text_style.font_size: 11}
@@ -8911,8 +9699,11 @@ HostedView{width: Fill height: Fill
                             }
                         }
                     }
+                    // 输入行：用户原话「输入想查找的内容，咕嘎直接在卡片上
+                    // 生成今日的晨报」—— 这里输入，出报动作全在卡片上发生
+                    //（工作台只负责转达与显示进度）。
                     View{width: Fill height: Fit flow: Right spacing: 8
-                        ag_in := TextInput{width: Fill height: 42 empty_text: "对主编说一句话…" on_change: |t| ag_set_draft(t)
+                        ag_in := TextInput{width: Fill height: 42 empty_text: "想找什么 / 想生成什么，对主编说…" on_change: |t| ag_set_draft(t)
                             draw_bg +: {color: #x1a2338 color_hover: #x1a2338 color_focus: #x1f2a44 color_empty: #x1a2338
                                 border_color: #x2b3a5e border_color_hover: #x2b3a5e border_color_focus: accent border_color_empty: #x2b3a5e
                                 border_radius: 12.0}
@@ -8920,19 +9711,18 @@ HostedView{width: Fill height: Fill
                         }
                         PrimaryBtn{text: "发送" on_click: || { rip_tap(540) ag_send() }}
                     }
+                    // 一行快捷键：能干的活儿都能从输入行说出来，这里只放最常用的
+                    // 三个例句（用户要求「清爽简洁」，原来两行七个删到一行三个）。
                     View{width: Fill height: Fit flow: Right spacing: 6
                         ChipDk{text: "生成今天这份" on_click: || ag_say("生成今天这份晨报")}
                         ChipDk{text: "只看 AI 和芯片" on_click: || ag_say("只看 AI 和芯片，生成今天的晨报")}
-                        ChipDk{text: "报过什么" on_click: || ag_say("查一下本报档案里关于 AI 的报道")}
-                    }
-                    View{width: Fill height: Fit flow: Right spacing: 6
-                        ChipDk{text: "我的读者画像" on_click: || ag_say("看看我的读者画像，我今天会关心什么")}
                         ChipDk{text: "念给我听" on_click: || rv_toggle()}
                     }
                 }
                 // ---------- 分区 1 · 干活（原主编台整页搬进来）----------
                 wb_t1 := View{visible: false width: Fill height: Fit flow: Down spacing: 5
-                    pet_menu_head := Label{width: Fill text: "" draw_text.color: #xffe2b8 draw_text.text_style: theme.font_bold{font_size: 10}}
+                    // 形体行（原来的标题行「形体 · 想让本鹅多大只」已删 —— 标题占一行
+                    // 太费地方，四个尺寸胶囊自己会说话。桌宠也可以直接双指捏合换体量）
                     View{width: Fill height: Fit flow: Right spacing: 6
                         pet_s1 := ChipDk{text: "" on_click: || pet_menu_size(0)}
                         pet_s2 := ChipDk{text: "" on_click: || pet_menu_size(1)}
@@ -8956,9 +9746,9 @@ HostedView{width: Fill height: Fill
                         pet_k4 := ChipDk{text: "" on_click: || pet_ask_kind("国际")}
                         pet_k5 := ChipDk{text: "" on_click: || pet_ask_kind("生活")}
                     }
+                    // 直接指挥（原来五个：聊天/出报/配图/分析/记录 —— 聊天与出报
+                    // 跟对话分区的输入行重复，删掉；剩下三件是对话替代不了的）
                     View{width: Fill height: Fit flow: Right spacing: 6
-                        pet_c1 := ChipDk{text: "" on_click: || pet_menu_cmd("chat")}
-                        pet_c2 := ChipDk{text: "" on_click: || pet_menu_cmd("brief")}
                         pet_c3 := ChipDk{text: "" on_click: || pet_menu_cmd("art")}
                         pet_c4 := ChipDk{text: "" on_click: || pet_menu_cmd("talk")}
                         bl_pill := ChipDk{text: "" on_click: || pet_menu_cmd("browse")}
@@ -9265,6 +10055,11 @@ HostedView{width: Fill height: Fill
                 View{width: Fill height: Fill}
                 cg_pet := Image{visible: false width: 180 height: 250 fit: ImageFit.Stretch src: http_resource("{{assets}}/assets/guga/cheer.png")}
             }
+            // ---- 开场 CG · B 方案「清晨印刷所」（队友出品，配乐版抽帧）----
+            // 队友交付的是 mp4；宿主的 splash 脚本层没有视频控件，所以离线抽成
+            // 51 帧（7.5fps，640×360，共 0.94MB）在这里轮播。帧放完 cg_off() 收场。
+            // 放在 cg overlay 的最后一个子节点 = 盖住原有的 shader 动画与文字层。
+            cg_movie := Image{width: Fill height: Fill fit: ImageFit.Stretch src: http_resource("{{assets}}/assets/cg/f000.jpg")}
         }
 
     }

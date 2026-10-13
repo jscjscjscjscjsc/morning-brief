@@ -194,8 +194,23 @@ def start_shim(upstream, key, force_model, min_tokens=None):
     e["SHIM_FORCE_MODEL"] = force_model
     if min_tokens:
         e["SHIM_MIN_TOKENS"] = str(min_tokens)
+    # ⚠️ 必须脱离控制台。
+    # 转发服务原来是个普通子进程，和 launch.py 共用同一个控制台 —— 用户
+    # 双击 .cmd 跑完之后关掉那个黑窗口（或 cmd 自己退出），转发服务会收到
+    # 控制台关闭事件跟着死掉。卡片那边只显示「没接上模型」，而端口 8791
+    # 早就没人听了（2026-10-13 实测：正常双击打开，8791 无监听）。
+    flags = 0
+    if os.name == "nt":
+        flags = 0x00000008 | 0x00000200        # DETACHED_PROCESS | NEW_PROCESS_GROUP
+    logf = None
+    try:
+        logf = open(Path(os.environ.get("TEMP", ".")) / "morning-brief-shim.log", "a",
+                    encoding="utf-8", errors="replace")
+    except Exception:
+        logf = subprocess.DEVNULL
     subprocess.Popen([sys.executable, str(SHIM)],
-                     env=e, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                     env=e, stdout=logf, stderr=subprocess.STDOUT,
+                     creationflags=flags, close_fds=True)
     for _ in range(20):          # 最多等 4 秒
         time.sleep(0.2)
         try:
@@ -329,7 +344,16 @@ def main():
     ap.add_argument("--timeout", type=int, default=180)
     ap.add_argument("--no-watchdog", action="store_true",
                     help="不起看门狗（看门狗自己重启卡片时会带上这个，避免套娃）")
+    ap.add_argument("--shim-only", action="store_true",
+                    help="只把模型转发服务拉起来就退出（看门狗用它把掉线的转发服务救回来）")
     args = ap.parse_args()
+
+    if args.shim_only:
+        key = read_minimax_key()
+        if not SHIM.is_file() or not key:
+            return 1
+        ok = start_shim(MINIMAX_BASE_URL, key, MINIMAX_TEXT_MODEL, min_tokens=6000)
+        return 0 if ok else 1
 
     say("=" * 62)
     say("  晨报卡 Morning Brief — 正在启动")
