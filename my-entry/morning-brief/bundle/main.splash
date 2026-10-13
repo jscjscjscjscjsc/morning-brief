@@ -2599,37 +2599,14 @@ fn cg_off(){
     ui.cg_rul.set_text("")
     ui.cg_pet.set_visible(false)
     ui.cg.set_visible(false)
-    // 帧层也收，桌宠 tick 恢复（播放开始时被暂停的）。
-    // 幂等：帧链播完和 8 秒兜底定时器都会走到这里。
-    ui.cg2.set_visible(false)
+    // 常驻桌宠层与 tick 回归（开场时被收起来的）。
+    ui.pet_layer.set_visible(true)
     pet_tick_on = true
 }
 
 // ---- 开场 CG · B 方案帧轮播（51 帧 @ 133ms ≈ 6.8 秒）----
 // mp4 没法在 splash 里播，抽帧轮播是等价替代。放完整段自动 cg_off()。
 // ⚠️ splash 没有 % 取模也没有格式化，补零用小函数手写。
-let cg2_i = 0
-fn cg2_pad3(i){
-    let s = "" + i
-    if i < 10 { return "00" + s }
-    if i < 100 { return "0" + s }
-    s
-}
-fn cg2_play(i){
-    if i == 0 {
-        // 第一帧前做三件事：亮帧层、关原 CG shader 层、暂停桌宠 tick。
-        // 少任何一件，三层渲染流互相 invalidate，画面就抽（10-13 实测）。
-        ui.cg2.set_visible(true)
-        ui.cg.set_visible(false)
-        pet_tick_on = false
-    }
-    if i >= 51 {
-        cg_off()
-        return
-    }
-    ui.cg_movie.set_src(http_resource("{{assets}}/assets/cg/f" + cg2_pad3(i) + ".jpg"))
-    start_timeout(0.133, || cg2_play(i + 1))
-}
 
 // ---- 咕嘎的表情：底部那个常驻编辑形象跟着本报的进度换脸（同一套桌宠贴图）----
 // 换脸只改「基础表情」；呼吸帧、说话口型、动作帧由下面的桌宠系统接管（pet_apply 统一出帧）。
@@ -8473,10 +8450,13 @@ fn boot(){
     // 现在先挂定时器：后面无论谁炸，CG 都会按时关掉。
     // B 方案帧轮播（6.8 秒）取代原 3.12 秒的 shader 动画 —— 帧链自己会在
     // 第 51 帧后调 cg_off()；这个兜底定时器只在帧链意外中断时救场。
-    start_timeout(8.0, || cg_off())
-    start_timeout(0.15, || cg2_play(0))
-    // 原 CG shader 层播放期间整个关掉，它的文字/企鹅定时器也去掉 ——
-    // cg_pet_in 会在 1.46s 把 cg_pet 点亮，帧层万一加载慢露出原 CG 层就穿帮。
+    // 开场 3.12 秒里常驻桌宠整只收起（CG 里不该出现咕嘎，饲养员 10-13 点破），
+    // cg_off() 里恢复。
+    ui.pet_layer.set_visible(false)
+    pet_tick_on = false
+    start_timeout(1.10, || cg_text())
+    start_timeout(1.46, || cg_pet_in())
+    start_timeout(3.12, || cg_off())
     // 档位查表必须先建：取数时每一条都要判档位，建表一次、查表 O(1)。
     // 忘了这一步的后果是静默的 —— 所有域名都落到兜底的「二手」，不报错。
     tier_map_build()
@@ -10261,15 +10241,6 @@ HostedView{width: Fill height: Fill
                 cg_pet := Image{visible: false width: 180 height: 250 fit: ImageFit.Stretch src: http_resource("{{assets}}/assets/guga/cheer.png")}
             }
         }
-    // ---- 开场 CG · B 方案《清晨印刷所》（队友出品，配乐版抽帧）----
-    // 宿主没有视频控件，mp4 离线抽成 51 帧（7.5fps，640×360，0.94MB）轮播。
-    // 独立一层：播放期间把原 CG shader 层整个关掉、桌宠 tick 暂停 ——
-    // 三层渲染流同时跑会互相 invalidate，画面抽的就是这个（10-13 用户实测）。
-    cg2 := View{visible: false width: Fill height: Fill flow: Down show_bg: true
-        new_batch: true
-        draw_bg +: {color: #x07090f}
-        cg_movie := Image{width: Fill height: Fill fit: ImageFit.Stretch src: http_resource("{{assets}}/assets/cg/f000.jpg")}
-    }
 
     }
     tile: View{width: Fill height: Fill flow: Down padding: Inset{left: 14 right: 14 top: 12 bottom: 12} spacing: 6
