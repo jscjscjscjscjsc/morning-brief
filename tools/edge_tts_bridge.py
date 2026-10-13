@@ -45,9 +45,12 @@ _voice = VOICE_DEFAULT
 # 开屏 CG 配乐的哨兵文本：卡片说这句话 = 点播 B 版《木琴纸韵》。
 # 用带方括号的固定串而不是「真实句子」，是为了跟人话天然不撞车。
 CG_BGM_MARKER = "[CG-BGM]"
+# 配乐放在 bundle 之外：hub 的结构性准入（app-hub/src/gate.rs）只放行
+# card/json/l0/octoscript/splash/svg/png/jpg/jpeg/webp/ttf/otf/txt/md ——
+# 任何音频扩展名都会被拒收。它只服务桌面版的开屏配乐，不进作品包。
 _CG_BGM_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "my-entry", "morning-brief", "bundle", "assets", "cg", "b-music.wav")
+    "my-entry", "morning-brief", "media", "b-music.wav")
 _cg_bgm_cache = None
 
 

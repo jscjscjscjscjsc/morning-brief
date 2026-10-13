@@ -1,0 +1,36 @@
+咕嘎音色 · 卡片与桌宠对齐（2026-10-12）
+
+桌宠（桌面版）用的嗓子：
+  edge-tts zh-CN-XiaoyiNeural（软萌少女音）
+  rate = +15%   pitch = +14Hz
+  出自 guga-penguin-pet/ui/tts_engine.py（EDGE_VOICE / EDGE_RATE / EDGE_PITCH）
+
+卡片（晨报卡）唯一能出声的通道：
+  host.request("model.speak", {text, lang:"zh-CN", voice, rate:1.15, pitch:1.07})
+  —— 卡片没有任何音频播放接口，只能借宿主的系统语音（本机 SAPI / Speech_OneCore）。
+
+本机实际装得到的音色（注册表实测）：
+  SAPI5     : Microsoft Zira (en-US 女), Microsoft Huihui (zh-CN 女, 成熟)
+  OneCore   : MSTTS_V110_zhCN_HuihuiM  (zh-CN 女, 成熟)
+              MSTTS_V110_zhCN_KangkangM (zh-CN 男)
+              MSTTS_V110_zhCN_YaoyaoM   (zh-CN 女, 年轻/少女)  ← 最接近桌宠那一把
+  没有任何 Neural / Natural 音色包。
+
+根因：卡片选音色的优先级表里 Huihui 排在 Yaoyao 前面，
+      于是这台机器永远选中 Huihui（成熟女声），跟桌宠完全不是一个人。
+
+修法：把 Yaoyao 提到 Huihui 前面（main.splash 的 vc_pick_voice）。
+
+实测（宿主 stderr，改前 → 改后）：
+  改前: voice HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_zhCN_HuihuiM
+  改后: model voice: spoke 15 chars in 3.08s (16000 Hz,
+        voice HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens\MSTTS_V110_zhCN_YaoyaoM,
+        rate 1.15, pitch 1.07) | text=[咕嘎嘎～…再戳一下也不是不行。]
+
+想做到「一字不差就是桌宠那一把」：这台机器需要装上微软的中文神经语音
+（Xiaoxiao / Xiaoyi 那几把）。装上以后卡片不用改一行代码 —— 优先级表第一顺位
+就是 Xiaoyi，会自动选中。
+
+另：在线合成（edge-tts）在本机不通，原因是 IPv6 记录不可用（宿主直连报
+「指定的网络名不再可用」）+ WebSocket 握手 403（Sec-MS-GEC 被拒），
+与卡片无关；桌宠在用户自己的桌面会话里走的是另一条网络路径。

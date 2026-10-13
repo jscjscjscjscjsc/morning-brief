@@ -11,7 +11,14 @@
 
 ---
 
-## 本轮三条
+## 复赛第二轮（2026-10-13）新增两条
+
+| 编号 | 对象 | 一句话 | 严重度 | 状态 |
+|---|---|---|---|---|
+| [ISSUE-04](ISSUE-04-等宽字体缺CJK兜底中文豆腐块.md) | `makepad` `font_policy.rs` | International 集的等宽链只挂 LiberationMono，且 `lazy_chain(Monospace)` 返回空——`theme.font_code` 的中文整段豆腐（页签「新报」、报头期号），normal/bold 却正常 | 中 | 已修（`my-entry/patches/host-font-monospace-cjk.patch`），本机重建验证 |
+| [ISSUE-05](ISSUE-05-开机窗口内宿主请求被静默吞掉.md) | `makepad` splash_host / 宿主投递 | 开机后约 0~4.5 秒内发出的 `host.request` **无回执、无错误、无日志**；4.5~12 秒时通时不通；12 秒后稳定。凡是"启动即探测"的应用都会被静默骗一次 | 中高 | 未修，已按实测规律绕过（配乐改启动器直放 + ack 重试；语音"用时再探"） |
+
+## 第一轮三条
 
 | 编号 | 对象 | 一句话 | 严重度 | 状态 |
 |---|---|---|---|---|
@@ -23,9 +30,15 @@
 
 ## 除了报 issue，本轮还往上游补了什么
 
+**字体覆盖（服务层贡献，不是绕过）**
+
+`my-entry/patches/host-font-monospace-cjk.patch`：给官方 `makepad` 的 International
+字体集补上等宽的 CJK 兜底（ISSUE-04 的修复件）。字体角色的设计文档自己写着
+「每个角色必须带完整链」，等宽是唯一漏的——属于补齐设计本意，不是给应用开小灶。
+
 **语音能力（服务层贡献，不是绕过）**
 
-`my-entry/patches/host-voice.patch`：为官方 `card-host` 新增一整个 `crates/llm-service`，提供 `llm.speech / speak / speaking / listen_start / listen_poll / listen_stop`，Windows 上落到 `makepad-system-speech` 与 `Windows.Media.SpeechRecognition`。
+`my-entry/patches/host-services.patch`（历史档案 `host-voice.patch`）：为官方 `card-host` 新增一整个 `crates/llm-service`，提供 `llm.speech / speak / speaking / listen_start / listen_poll / listen_stop`，Windows 上落到 `makepad-system-speech` 与 `Windows.Media.SpeechRecognition`。
 
 这不是「给应用开小灶」：补丁**没有**改 `app-policy`，也就是**没有**把 `llm` 能力发给商店应用——那会违反官方规定。它做的是官方文档点名要求的事：`HOST-SERVICES.md` L22「a store app that needs something else needs **a new service in the shells (below), not a workaround in the bundle**」。于是本应用在商店宿主上**刻意不声明 `llm`**，把语音当「有则更好」的可选增强；一旦宿主装了这个补丁，语音立刻可用。
 

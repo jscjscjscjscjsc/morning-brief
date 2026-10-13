@@ -20,8 +20,8 @@
     "screenshots/02-plan.png",
     "screenshots/03-done.png",
     "screenshots/04-story.png",
-    "screenshots/05-decision.png",
-    "screenshots/06-decision-rows.png"
+    "screenshots/05-workbench.png",
+    "screenshots/06-opening.png"
   ],
   "icon": "assets/icon.svg",
   "platforms": [
@@ -32,7 +32,7 @@
     "support": "https://github.com/jscjscjscjscjsc/morning-brief/issues",
     "privacy_policy_url": "https://github.com/jscjscjscjscjsc/morning-brief/blob/master/PRIVACY.md"
   },
-  "release_notes": "复赛版本 v0.3.0：意图 → 主编先问一句 → 取数计划待批准 → 抓取 HN/TechMeme → 信源评级 → 三视角编辑部背靠背评审 → 主编终审 → 今日头版 → 结果页（淘汰率与信源构成公开）→ 阅读页（摘要 / AI 解读 / 线索时间轴 / 追问信）。本轮新增：信源太薄时主编可拒刊（「今日休刊」，读者可一键否决）、出报把本期硬事实记进本机台账并在下一期自动对账与更正、同期候选口径互校、出报链路留痕可回放、编辑部宪法带版本号。所有模型调用走官方 model.complete —— 由宿主挑模型、管预算，应用看不到也拿不到密钥。第 35 轮加了「决策台」：同一批候选，再交给另一类模型判一次 —— 它不写句子，只回「选择 + 置信度」：档位只能落在预设的四档里（落不进去记 unknown），再给一个 0-100 的进刊概率和一个 0-10 的热度分；与本报按域名判出的档位不一致就记成分歧，写进本机留痕，点一行能打开原报道（见截图 05 / 06）。做法参考 2026 年 9 月 TypeSafe AI 的 Jev / System One，把「生成式模型写给人看、决策模型给程序用」这条分工搬进编辑部；本机没有决策端点，就用同一条 model.complete 通道把 schema 收紧成「预设集合 + 置信度」，不在没有端点时假装有端点。语音音色也改了：优先挑这台机器上最像人的一个（Natural → Neural → Xiaoxiao → …）；同时启动时不再自动去探一个注定被拒的语音服务，界面直接写明本机是否启用语音。第 36 轮把「一个信箱」变成「多个平台」：取数来源从 HN + TechMeme 两家扩到七家，新增 GitHub 趋势（api.github.com 搜索 API，星数当热度）、arXiv 最新论文、少数派、InfoQ 中文、IT之家，并为此在 manifest 里声明了对应域名；首页新增「内容平台 · 海外 / 国内」勾选条，想看哪家勾哪家，没勾的平台一条都不会去取，取数计划里也只会列出勾中的那几家。信息品类从 4 个科技向（AI／开源／安全／芯片）扩到 7 个，新增生活／财经／科学，品类与平台互相独立，可以只要「生活 × 少数派」。常驻 AI 主编新增 set_platforms 工具，说一句「只看 GitHub 和少数派」就能改；拿不到授权就不会发任何请求，某个平台失败只如实标注失败、绝不补齐条数。启动画面与报头保留英文招牌（MORNING BRIEF），另加中文说明。",
+  "release_notes": "复赛 v0.3.1：界面整体升级为「破晓」清晨纸色体系，顶部多日报页签（可同时在手几期）；咕嘎智能体并入新界面 —— 桌宠、三分区工作台（对话/干活/往期）、语音收音台、档案与收藏、浏览记录、读者画像、真伪核验台；开场 CG 换为《清晨印刷所》配乐版（6.8 秒帧动画，CG 中不出现桌宠）。出报链路不变：意图 → 主编先问一句 → 取数计划待批准 → 抓取 HN/TechMeme/GitHub/少数派 → 信源评级 → 三视角编辑部背靠背评审 → 主编终审 → 今日头版 → 结果页（淘汰率与信源构成公开）→ 阅读页。本轮另修：等宽中文字体兜底（宿主补丁）、启动器可移植化、主编回复形状归一。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

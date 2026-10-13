@@ -219,6 +219,26 @@ class Handler(BaseHTTPRequestHandler):
                 if j and j.strip() != content.strip():
                     content = j
                     changed.append("extracted-json")
+                # 补齐「主编协议」的形状：推理模型偶发只回 {"tool": ...} 或只回
+                # {"say": ...}，而主编辑协议 required = [say, tool]，宿主会直接拒收
+                # （实测报错：output is missing "say" → 卡片显示「主编没接上模型」）。
+                # 只在这两个键露过面时补对侧的空值——其它 schema
+                # （cover/panel/judge/fact…）都没有这两个键，绝不会被误伤。
+                try:
+                    o = json.loads(content)
+                    if isinstance(o, dict):
+                        patched = False
+                        if "tool" in o and "say" not in o:
+                            o["say"] = ""
+                            patched = True
+                        if "say" in o and "tool" not in o:
+                            o["tool"] = "none"
+                            patched = True
+                        if patched:
+                            content = json.dumps(o, ensure_ascii=False)
+                            changed.append("filled-shape")
+                except Exception:
+                    pass
 
             msg["content"] = content
             choice["message"] = msg

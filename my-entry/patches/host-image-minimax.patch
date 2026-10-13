@@ -1,0 +1,171 @@
+diff --git a/widgets/Cargo.toml b/widgets/Cargo.toml
+index 14e0011..c8561c0 100644
+--- a/widgets/Cargo.toml
++++ b/widgets/Cargo.toml
+@@ -23,6 +23,11 @@ makepad-ai-speech = { path = "../libs/ai/models/speech", default-features = fals
+ makepad-ai-hub = { path = "../libs/ai/hub", default-features = false, features = ["stt"], optional = true }
+ makepad-cef = { path = "../libs/cef", optional = true }
+ 
++# `sys.photo` 的 MiniMax 生图后端（见 src/splash.rs）。
++# 默认特性带着 TLS；`json` 给 send_json。已在本工作区其他 crate 里使用，
++# 版本落在锁文件里，不会引入新的依赖树。
++ureq = { version = "3", features = ["json"] }
++
+ makepad-html = { path = "../libs/html", version = "1.0.0" }
+ unicode-segmentation = { version = "1.12.0", path = "../libs/unicode/unicode-segmentation" }
+ pulldown-cmark = { version = "0.12.2", path = "../libs/pulldown-cmark", default-features = false, features = ["simd"] }
+diff --git a/widgets/src/splash.rs b/widgets/src/splash.rs
+index 4b92e62..23b1814 100644
+--- a/widgets/src/splash.rs
++++ b/widgets/src/splash.rs
+@@ -1244,6 +1244,135 @@ fn gibs_datetime(minutes_ago: i64) -> String {
+ #[path = "splash_dataset.rs"]
+ mod composition_dataset;
+ 
++// ---------------------------------------------------------------------------
++// MiniMax 生图后端（宿主侧）
++//
++// 官方 `sys.photo` 把配图交给 pollinations 的 URL 工厂：卡片只拿到一个地址，
++// 由宿主按需下载。这条路现在只剩 `sana` 一个模型（`model=flux` 早已下线），
++// 出图质量不稳定——而 MiniMax 是本届大赛的能力提供方。
++//
++// 所以这里给 `sys.photo` 加一层**优先后端**：宿主进程若带着 `MINIMAX_API_KEY`
++// 启动，就先请 MiniMax 的 `image-01` 按同一段提示词画一张 16:9 的图，再把
++// 返回的**公开 https 地址**交给卡片。卡片拿到的仍然只是一个 URL，与
++// pollinations 那条路完全同构，所以卡片一行都不用改。
++//
++// 三条边界：
++//   * key 只活在宿主进程的环境变量里，**从不进入卡包**——卡包里没有密钥可言。
++//   * 没带 key（商店宿主、评审机器）时逐字节退回 pollinations 的老行为。
++//   * 生图要十几秒，而 `sys.photo` 是绘制期调用的、必须立刻返回：第一次问
++//     只起后台线程并回空串，之后每次问要么给地址、要么继续给空串；失败则
++//     永久退回 pollinations（卡片照常有图，只是回到旧质量）。
++// ---------------------------------------------------------------------------
++
++#[derive(Clone)]
++enum MmShot {
++    Pending,
++    Ready(String),
++    Failed,
++}
++
++fn mm_shots() -> &'static std::sync::Mutex<std::collections::HashMap<String, MmShot>> {
++    static SHOTS: std::sync::OnceLock<
++        std::sync::Mutex<std::collections::HashMap<String, MmShot>>,
++    > = std::sync::OnceLock::new();
++    SHOTS.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
++}
++
++/// 宿主进程启动时带的环境变量；没有一个就整条 MiniMax 通路关闭。
++/// `MINIMAX_IMAGE_MODEL` 可覆盖模型（默认 `image-01` 旗舰画质；`image-01-live` 更快）。
++fn mm_config() -> Option<(String, String)> {
++    static CFG: std::sync::OnceLock<Option<(String, String)>> = std::sync::OnceLock::new();
++    CFG.get_or_init(|| {
++        let key = std::env::var("MINIMAX_API_KEY").ok()?.trim().to_string();
++        if key.is_empty() {
++            return None;
++        }
++        let model = std::env::var("MINIMAX_IMAGE_MODEL")
++            .ok()
++            .map(|m| m.trim().to_string())
++            .filter(|m| !m.is_empty())
++            .unwrap_or_else(|| "image-01".to_string());
++        log!("splash: minimax image backend on ({model})");
++        Some((key, model))
++    })
++    .clone()
++}
++
++/// 一次生图往返。成功给公开图片地址；任何一步不顺给 None（由调用方退回）。
++fn mm_render(prompt: &str, key: &str, model: &str) -> Option<String> {
++    let agent = ureq::Agent::config_builder()
++        .timeout_global(Some(std::time::Duration::from_secs(120)))
++        .http_status_as_error(false)
++        .build()
++        .new_agent();
++    let body = serde_json::json!({
++        "model": model,
++        "prompt": prompt,
++        "aspect_ratio": "16:9",
++        "n": 1,
++    });
++    let mut res = agent
++        .post("https://api.minimaxi.com/v1/image_generation")
++        .header("Authorization", &format!("Bearer {key}"))
++        .header("Content-Type", "application/json")
++        .send_json(&body)
++        .ok()?;
++    let text = res
++        .body_mut()
++        .with_config()
++        .limit(4 * 1024 * 1024)
++        .read_to_string()
++        .ok()?;
++    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
++    let url = v.get("data")?.get("image_urls")?.as_array()?.first()?.as_str()?;
++    if !url.starts_with("https://") {
++        log!("splash: minimax answered without an https image url");
++        return None;
++    }
++    Some(url.to_string())
++}
++
++/// `sys.photo` 的 MiniMax 前置查询。
++/// `Ok(Some(url))` 用这个地址；`Ok(None)` 还没好、这一轮先回空串继续等；
++/// `Err(())` 这条路不可用/已失败，请退回 pollinations。
++fn mm_lookup(prompt: &str) -> Result<Option<String>, ()> {
++    let Some((key, model)) = mm_config() else {
++        return Err(());
++    };
++    let (action, ready) = {
++        let mut shots = mm_shots().lock().unwrap_or_else(|e| e.into_inner());
++        match shots.get(prompt) {
++            Some(MmShot::Ready(u)) => (1u8, u.clone()),
++            Some(MmShot::Pending) => (0u8, String::new()),
++            Some(MmShot::Failed) => (2u8, String::new()),
++            None => {
++                shots.insert(prompt.to_string(), MmShot::Pending);
++                (3u8, String::new())
++            }
++        }
++    };
++    if action == 3 {
++        let prompt = prompt.to_string();
++        std::thread::spawn(move || {
++            let got = mm_render(&prompt, &key, &model);
++            if let Ok(mut shots) = mm_shots().lock() {
++                shots.insert(
++                    prompt,
++                    match got {
++                        Some(u) => MmShot::Ready(u),
++                        None => MmShot::Failed,
++                    },
++                );
++            }
++        });
++    }
++    match action {
++        1 => Ok(Some(ready)),
++        2 => Err(()),
++        _ => Ok(None),
++    }
++}
++
+ pub fn register_agent_module(vm: &mut ScriptVm) {
+     let agent = vm.new_module(id!(agent));
+     vm.add_method(
+@@ -1344,6 +1473,14 @@ pub fn register_agent_module(vm: &mut ScriptVm) {
+             } else {
+                 q
+             };
++            // MiniMax 优先：宿主带 MINIMAX_API_KEY 时由它出图（返回公开 https 地址，
++            // 卡片仍只拿到一个 URL）。未就绪回空串——卡片会再来问；这条路失败则
++            // 落到下面的 pollinations，行为与官方一致。
++            match mm_lookup(q) {
++                Ok(Some(url)) => return vm.bx.heap.new_string_from_str(&url),
++                Ok(None) => return vm.bx.heap.new_string_from_str(""),
++                Err(()) => {}
++            }
+             // Percent-encode the prompt for a URL path segment (RFC 3986):
+             // keep unreserved chars, encode everything else (incl. spaces) by
+             // UTF-8 byte.

@@ -9,11 +9,14 @@
 
 ## 现在能做到什么
 
-> 第 1–12 条为第 30 轮及以前，已实机验证。
-> **第 13–21 条是第 31、32、33 轮新增的，尚未实机验证**（改这三轮用的机器没有宿主环境，只做了离线体检）。
-> 接手请先跑 `hub stamp` 再 `run.ps1`。
+> 第 1–24 条为第 45 轮及以前，均已在有宿主的机器上实机验证。
+> **第 45 轮（2026-10-13）成图大改版**：整个界面换成「破晓」清晨纸色体系 + 顶部多日报页签
+> （同时在手几期，切页不丢阅读位置）；咕嘎（智能体）整块并入新界面 —— 右下角桌宠、
+> 三分区工作台（对话 / 干活 / 往期）、语音收音台、档案与收藏、浏览记录、读者画像、真伪核验台；
+> 开场 CG 换成 **B 版《清晨印刷所》配乐版**（26 帧 / 6.8 秒，CG 里不出现桌宠）。
+> 接手请看 `进度交接_第45轮后.md`。
 
-1. 打开卡片先播 3.12 秒开场 CG「Dawn / 破晓」，随后自动恢复上次晨报，头版也能一起回来
+1. 打开卡片先播 **6.8 秒开场 CG「B 版 · 清晨印刷所」**（26 帧纸页翻折动画，桌面版带配乐），随后自动恢复上次的日报与阅读位置
 2. **常驻 AI 主编**：右下角站着一个纯代码画出来的小形象（会呼吸、会眨眼），旁边的「● AI 主编」展开对话条 —— 一句话让它操作整个程序：换主题、改条数、写关注点、生成计划、批准取数、取消、重新开始、打开某条、返回列表、前后条、换头版、画配图。界面上能点的，它都能做
 3. 生成晨报：**主编先问一句二选一**（今天偏技术实现还是偏行业格局）→ 出**取数计划**请你批准 → 官方 net 能力抓 Hacker News + TechMeme → 信源评级 → AI 编辑部 3 个视角（技术 / 行业 / 读者）**背靠背独立评审** → 主编终审挑重点。**联网必须经你明确批准**（说过「批准」才放行，主编自己不能越过这一步）
 4. 列表页：编号 + 来源缩略图 + 三方推荐标记 + AI 主编用时与 token 数
@@ -47,28 +50,31 @@
 | 工具 | `ag_tools` / `ag_do()` | 22 个工具，唯一派发入口，与界面按钮一一对应 |
 | 界面 | `ag_dock` | 常驻对话条（气泡流 + 输入框 + 快捷短语 + 语音按钮） |
 
-> **语音能力需要宿主补丁**：`my-entry/patches/host-voice.patch`（打在官方 `OctoSense-App-Hub` 上，说明见该目录 README）。
-> 没打补丁的机器上卡片会自动降级 —— 隐藏语音按钮，其余功能照常。
+> **宿主补丁（两枚，见 `my-entry/patches/README.md`）**：
+> `host-services.patch` 给官方 `OctoSense-App-Hub` 加 `model` / `llm`（语音）服务；
+> `host-font-monospace-cjk.patch` 修官方 `makepad` 的等宽字体缺 CJK 兜底（不然页签中文是豆腐块）。
+> 没打补丁的机器上卡片自动降级：没有 `model` 的宿主会拒收本包（见 `04_项目实操指南.md`），
+> 只有字体没打时其余功能照常、等宽中文显示为方框。
 
-## 快速开始（Windows + PowerShell）
+## 快速开始（Windows）
 
-> 前置：本机需已安装 OctoSense App Hub 与 card-host（见 `04_项目实操指南.md`），并已克隆官方 `OctoScript-App-Design-Flow`。
+**成员/评审要跑起来**（三步）：
+
+1. 按 `07_官方仓库下载说明.md` 下好官方运行组件（`OctoScript-App-Design-Flow` + `OctoSense-App-Hub`）；
+2. 按 `my-entry/patches/README.md` 打两枚宿主补丁并**重建 card-host**（认识 `model` 能力 + 等宽中文字体）；
+   没重建过宿主的老二进制会把本包以「unknown capability: model」拒收；
+3. **双击仓库根目录的 `一键体验-晨报卡.bat`**（或 `启动-晨报卡.cmd`）。
+
+启动器 `tools/launch.py` 会自己找宿主、配模型通路、选空闲端口、放开场配乐，并在旁边挂一只
+看门狗（界面万一卡成白屏会自动把卡片拉起来）。失败状态演示走 `一键体验-部分失败演示.bat`。
 
 ```powershell
-# 1) 停掉旧进程
-powershell -ExecutionPolicy Bypass -File tools\stop.ps1
-
-# 2) 启动卡片服务（端口 8136）
-powershell -ExecutionPolicy Bypass -File tools\run.ps1
-
-# 3) 打开界面后，截图看效果（存到 my-entry/evidence/）
+# 开发者的老入口（路径按本机实际安装位置调整）：
+powershell -ExecutionPolicy Bypass -File tools\stop.ps1     # 停
+powershell -ExecutionPolicy Bypass -File tools\run.ps1      # 起（端口 8136）
 powershell -ExecutionPolicy Bypass -File tools\shot.ps1 -Name 'my_shot.png'
-
-# 4) 改完 main.splash 必须做语法校验
-python tools\brace.py
+python tools\brace.py                                       # main.splash 语法体检
 ```
-
-`tools\run.ps1` 里的路径按本机实际安装位置调整即可。
 
 ## 仓库与推送（本机注意）
 
@@ -86,11 +92,12 @@ git push
 
 | 路径 | 说明 |
 | --- | --- |
-| `my-entry/morning-brief/bundle/main.splash` | **主代码**（约 3400 行，唯一需要改的文件） |
+| `my-entry/morning-brief/bundle/main.splash` | **主代码**（约 1.17 万行，唯一需要改的文件） |
+| `my-entry/morning-brief/media/` | 开屏配乐 wav（**在 bundle 之外**：hub 准入不许 bundle 里出现音频扩展名） |
 | `my-entry/morning-brief/bundle/listing.json` | 卡片上架信息（副标题、关键词、截图、发布者） |
 | `my-entry/evidence/` | 每一步的实机截图（验收证据） |
 | `项目复盘/` | 每轮进化复盘（外行话术，能看懂"这轮到底变好了什么"） |
-| `进度交接_第35轮前.md` | **交接文档**：新同学/新对话看这一个文件就能接着干 |
+| `进度交接_第45轮后.md` | **交接文档**：新同学/新对话看这一个文件就能接着干 |
 | `00`–`07` 开头的 Markdown | 比赛策略、分工、实操指南、跑通实录、官方仓库下载说明 |
 | `tools/` | 运行 / 截图 / 语法校验脚本 |
 
@@ -105,7 +112,7 @@ git push
 
 ## 贡献指南（欢迎继续改）
 
-1. 改代码前先读 `进度交接_第35轮前.md` 的「六、坑（务必记住）」
+1. 改代码前先读 `进度交接_第45轮后.md` 的坑表（历轮大坑都在 `进度交接_*.md` 系列里）
 2. 改 `main.splash` 的硬规矩：
    - 不用 `contains / slice / sort / map / filter`；保留字 `ok / me / scope / self / _` 不可作变量名
    - 数字拼串要先转文本再拼（`"" + n`）；拼接结果先 `let` 成变量再传参；`llm.chat` 的 `max_tokens <= 2048`

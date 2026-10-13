@@ -352,6 +352,9 @@ def main():
                     help="不起看门狗（看门狗自己重启卡片时会带上这个，避免套娃）")
     ap.add_argument("--shim-only", action="store_true",
                     help="只把模型转发服务拉起来就退出（看门狗用它把掉线的转发服务救回来）")
+    ap.add_argument("--bundle", type=str, default="",
+                    help="指定作品包目录（默认 my-entry/morning-brief/bundle；"
+                         "失败状态演示用 my-entry/demo-partial/bundle）")
     args = ap.parse_args()
 
     if args.shim_only:
@@ -365,8 +368,9 @@ def main():
     say("  晨报卡 Morning Brief — 正在启动")
     say("=" * 62)
 
-    if not BUNDLE.is_dir():
-        say(f"[错误] 找不到作品包：{BUNDLE}")
+    bundle = Path(args.bundle).resolve() if args.bundle else BUNDLE
+    if not bundle.is_dir():
+        say(f"[错误] 找不到作品包：{bundle}")
         return 1
 
     octo = find_octo()
@@ -432,6 +436,9 @@ def main():
     # （开机头几秒的宿主往返不可靠，探嗓子的结果会静默丢失，字条不依赖往返）。
     # 每次启动都重写：桥没了就把旧字条删掉，卡片的降级才不会踏空。
     app_data = Path(os.environ.get("TEMP", ".")) / "morning-brief-state"
+    if bundle != BUNDLE:
+        # 指定了别的作品包（如失败状态演示）：用独立存档目录，别把真实晨报的档案写花。
+        app_data = Path(os.environ.get("TEMP", ".")) / "morning-brief-demo-state"
     bridge_flag = app_data / "morning-brief" / "voice-bridge.on"
     try:
         if env.get("GUGUA_VOICE_BRIDGE"):
@@ -453,14 +460,15 @@ def main():
     elif port != args.port:
         say(f"  端口     {args.port} 被其它程序占用，改用 {port}")
 
-    cmd = [sys.executable, "-u", str(octo), "run", str(BUNDLE),
+    cmd = [sys.executable, "-u", str(octo), "run", str(bundle),
            "--port", str(port), "--timeout", str(args.timeout),
            "--detach", "--app-data", str(app_data)]
 
     # 开屏配乐：B 版《木琴纸韵》。由启动器在卡片起窗前放 —— 卡片侧的宿主请求
     # 在开机窗口里时灵时不灵（实测边界在 0~12 秒之间飘），而这边一声 PlaySound
     # 是确定的。6.8 秒放完就退；字条改成 launcher-plays，卡片看到就不再自己点播。
-    music = BUNDLE / "assets" / "cg" / "b-music.wav"
+    # 配乐在 bundle 之外（hub 准入不许 bundle 里出现音频扩展名）。
+    music = bundle.parent / "media" / "b-music.wav"
     if env.get("GUGUA_VOICE_BRIDGE") and music.is_file():
         try:
             flags = 0x00000008 | 0x00000200 if os.name == "nt" else 0

@@ -1,6 +1,6 @@
 # AGENTS.md — 给接手的 AI Agent 的入口
 
-> 你（AI agent）打开这个仓库时，请先读完本文件，再看 `进度交接_第35轮前.md`。
+> 你（AI agent）打开这个仓库时，请先读完本文件，再看 `进度交接_第45轮后.md`。
 > 这一个文件讲清：这是什么项目、现在到哪一步、怎么跑起来、什么不能碰、下一步做什么。
 >
 > **接力任务（GitHub Issue #1）**：https://github.com/jscjscjscjscjsc/morning-brief/issues/1
@@ -23,9 +23,10 @@
 ## 二、技术栈（重要，别用错工具）
 
 作品跑在 **OctoSense App Hub** 的 `card-host` 里，界面用 **splash 脚本**（一种类 makepad 的 DSL）写的，
-大模型能力走宿主的 `llm` 服务（`host.request("llm.chat", ...)`）。
+大模型能力走宿主服务（`host.request("model.complete", ...)`；宿主侧需要打 `my-entry/patches/` 里的两枚补丁，
+其中一枚修等宽中文字体、一枚加 model/语音服务 —— 见 `patches/README.md`）。
 
-- **主代码只有一个文件**：`my-entry/morning-brief/bundle/main.splash`（约 3400 行）
+- **主代码只有一个文件**：`my-entry/morning-brief/bundle/main.splash`（约 1.17 万行；第 45 轮把咕嘎线与破晓 UI 合并在了一起）
 - `my-entry/morning-brief/bundle/manifest.json`：能力清单（capabilities / network.hosts / 哈希）
 - `my-entry/morning-brief/bundle/listing.json`：上架信息（副标题、关键词、发布者）
 

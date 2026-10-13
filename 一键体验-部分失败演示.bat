@@ -1,16 +1,25 @@
 @echo off
-title ³¿±¨¿¨ ¡ª ÑİÊ¾£ºÀ´Ô´Ê§°ÜÊ±»á·¢ÉúÊ²Ã´
-echo Õâ¸öÈë¿Ú×¨ÃÅÑİÊ¾¡¸Êı¾İÀ´Ô´³öÎÊÌâÊ±£¬¿¨Æ¬ÔõÃ´ÈçÊµ¸æËßÄã¡¹¡£
-echo ÉÔµÈ 10-20 Ãë£¬»áµ¯³öÒ»¸ö´°¿Ú¡£
-echo ²Ù×÷Ë³Ğò£ºµã¡¸Éú³É³¿±¨¡¹¡ú µã¡¸Åú×¼²¢È¡Êı¡¹¡ú µÈÒ»ÏÂ£¬¿´½á¹ûÇøµÄÊ§°ÜÌáÊ¾¡£
+rem ============================================================
+rem  æ™¨æŠ¥å¡ â€” å¤±è´¥çŠ¶æ€æ¼”ç¤ºï¼ˆå¤§èµ›è¦æ±‚ï¼šæ¼”ç¤ºé‡Œå¿…é¡»æœ‰ä¸€ä¸ªå¤±è´¥/ç©ºçŠ¶æ€ï¼‰
+rem  è¿™ä¸ªå…¥å£ä¸“é—¨æ¼”ç¤ºã€Œæ•°æ®æ¥æºå‡ºé—®é¢˜æ—¶ï¼Œå¡ç‰‡æ€ä¹ˆå¦‚å®å‘Šè¯‰ä½ ã€ã€‚
+rem  çœŸæ­£çš„å¯åŠ¨é€»è¾‘åœ¨ tools\launch.pyï¼ˆè‡ªåŠ¨æ‰¾å®¿ä¸»ã€é…æ¨¡å‹é€šè·¯ã€èµ·çœ‹é—¨ç‹—ï¼‰ï¼›
+rem  è¿™é‡ŒåªæŒ‡å®šæ¼”ç¤ºç”¨çš„ä½œå“åŒ…å’Œç‹¬ç«‹å­˜æ¡£ã€‚
+rem ============================================================
+chcp 65001 >nul
+title æ™¨æŠ¥å¡ â€” æ¼”ç¤ºï¼šæ¥æºå¤±è´¥æ—¶ä¼šå‘ç”Ÿä»€ä¹ˆ
+setlocal
+
 echo.
-set PYTHONIOENCODING=utf-8
-set PYTHONUTF8=1
-set OCTO_HUB=C:\rustbuild\octosense-hub\x86_64-pc-windows-gnu\release\hub.exe
-set OCTO_CARD_HOST=C:\rustbuild\octosense-hub\x86_64-pc-windows-gnu\release\card-host.exe
-set OCTOSENSE_APP_HUB=C:\Users\Admin£¨ÎŞÃÜÂë£©\Desktop\Êı¾İÎÄ¼ş\ºÚ¿ÍËÉ±ÈÈüÏîÄ¿\OctoSense-App-Hub
-cd /d "C:\Users\Admin£¨ÎŞÃÜÂë£©\Desktop\Êı¾İÎÄ¼ş\ºÚ¿ÍËÉ±ÈÈüÏîÄ¿"
-python "OctoScript-App-Design-Flow\tools\octo" run "my-entry\demo-partial\bundle" --port 8161 --timeout 120
+echo  è¿™ä¸ªå…¥å£ä¸“é—¨æ¼”ç¤ºã€Œæ•°æ®æ¥æºå‡ºé—®é¢˜æ—¶ï¼Œå¡ç‰‡æ€ä¹ˆå¦‚å®å‘Šè¯‰ä½ ã€ã€‚
+echo  ç¨ç­‰ 10-20 ç§’ï¼Œä¼šå¼¹å‡ºä¸€ä¸ªçª—å£ã€‚
+echo  æ“ä½œé¡ºåºï¼šç‚¹ã€Œç”Ÿæˆæ™¨æŠ¥ã€â†’ ç‚¹ã€Œæ‰¹å‡†å¹¶å–æ•°ã€â†’ ç­‰ä¸€ä¸‹ï¼Œçœ‹ç»“æœåŒºçš„å¤±è´¥æç¤ºã€‚
 echo.
-echo ÌåÑé½áÊø¡£
+
+set "PY=%USERPROFILE%\.workbuddy\binaries\python\versions\3.13.12\python.exe"
+if not exist "%PY%" set "PY=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+if not exist "%PY%" set "PY=python"
+
+"%PY%" "%~dp0tools\launch.py" --bundle "my-entry\demo-partial\bundle" --port 8161 --no-watchdog
+echo.
+echo  ä½“éªŒç»“æŸã€‚
 pause
