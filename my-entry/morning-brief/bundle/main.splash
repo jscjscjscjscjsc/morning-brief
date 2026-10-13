@@ -214,9 +214,6 @@ let vc_wait_say = ""
 let vc_wait_mic = false
 // 惰性探测：不在启动阶段探 model.speech（白白多一次宿主往返），
 // 等真正要说话 / 开麦 / 点朗读开关时再探。vc_probed 记录「探过了」，_wait_* 暂存探测期间积压的请求。
-let vc_probed = false
-let vc_wait_say = ""
-let vc_wait_mic = false
 let vc_stt = false
 let vc_voices = 0
 let vc_auto = true
@@ -329,7 +326,6 @@ let rv_wait = false
 // 第一次念报时 vc_tts 还是 false。rv_start 原来直接拿 vc_tts 判，结论就成了
 // 「这台机器没有可用的语音合成」—— 哪怕这台机器明明有语音。实测踩过：
 // 开机后第一件事点「念给我听」，永远念不出来。
-let rv_wait = false
 
 // ===== 跨源矛盾与更正 · 这份报第一次会认错 =====
 //   clash：同一期里，不同来源对同一件事的说法对不上（数字、口径）。
@@ -2220,30 +2216,10 @@ fn guga_take_pick(kind, seed){
 }
 
 // 给一条挑一句私货。题材命中就按题材说，否则按信源档位说。
-fn guga_pool(kind){
-    let out = []
-    for g in guga_takes {
-        if g.k == kind { out.push(g) }
-    }
-    out
-}
 
 // 不依赖取模运算（脚本里没有 % 的现成用法，别拿它冒险）：减法取余。
 // 不依赖取模运算（脚本里没有 % 的现成用法，别拿它冒险）：减法取余。
-fn guga_mod(v, n){
-    if n <= 0 { return 0 }
-    let x = v
-    while x >= n { x = x - n }
-    while x < 0 { x = x + n }
-    x
-}
 
-fn guga_take_pick(kind, seed){
-    let pool = guga_pool(kind)
-    let n = pool.len()
-    if n == 0 { return "" }
-    pool[guga_mod(seed, n)].t
-}
 
 // 给一条挑一句私货。题材命中就按题材说，否则按信源档位说。
 fn rv_text_line(){
@@ -3110,26 +3086,8 @@ fn bl_log_line(){
 }
 
 // 向主编问某品类：界面上立刻亮一条「正在查」，再让主编去干活。
-fn pet_w_of(i){
-    if i <= 0 { return 60.0 }
-    if i == 1 { return 92.0 }
-    if i == 2 { return 130.0 }
-    170.0
-}
 
-fn pet_h_of(i){
-    if i <= 0 { return 84.0 }
-    if i == 1 { return 128.0 }
-    if i == 2 { return 181.0 }
-    236.0
-}
 
-fn pet_size_name(i){
-    if i <= 0 { return "小" }
-    if i == 1 { return "中" }
-    if i == 2 { return "大" }
-    "特大"
-}
 
 // 把 pet_px / pet_py 拆成二进制，逐位切占位控件的可见性。
 // 顺序必须是「从大到小」：先拿掉权重最大的那一位，剩下的余数再给下一位。
@@ -3141,92 +3099,8 @@ fn pet_size_name(i){
 // 反过来从 1 开始贪心的话，`余数 >= 1` 这一条对任何正数都成立，
 // 前八位会全亮，位置会永远卡在 255（这个坑实测踩过）。
 // 只在「整数位置真的变了」时才调用 —— 鼠标每个移动事件都发二十来个宿主调用不值得。
-fn pet_spacers_sync(){
-    let bx = pet_px
-    let sx256 = bx >= 256.0
-    if sx256 { bx = bx - 256.0 }
-    let sx128 = bx >= 128.0
-    if sx128 { bx = bx - 128.0 }
-    let sx64 = bx >= 64.0
-    if sx64 { bx = bx - 64.0 }
-    let sx32 = bx >= 32.0
-    if sx32 { bx = bx - 32.0 }
-    let sx16 = bx >= 16.0
-    if sx16 { bx = bx - 16.0 }
-    let sx8 = bx >= 8.0
-    if sx8 { bx = bx - 8.0 }
-    let sx4 = bx >= 4.0
-    if sx4 { bx = bx - 4.0 }
-    let sx2 = bx >= 2.0
-    if sx2 { bx = bx - 2.0 }
-    let sx1 = bx >= 1.0
-    ui.px256.set_visible(sx256)
-    ui.px128.set_visible(sx128)
-    ui.px64.set_visible(sx64)
-    ui.px32.set_visible(sx32)
-    ui.px16.set_visible(sx16)
-    ui.px8.set_visible(sx8)
-    ui.px4.set_visible(sx4)
-    ui.px2.set_visible(sx2)
-    ui.px1.set_visible(sx1)
 
-    let by = pet_py
-    let sy512 = by >= 512.0
-    if sy512 { by = by - 512.0 }
-    let sy256 = by >= 256.0
-    if sy256 { by = by - 256.0 }
-    let sy128 = by >= 128.0
-    if sy128 { by = by - 128.0 }
-    let sy64 = by >= 64.0
-    if sy64 { by = by - 64.0 }
-    let sy32 = by >= 32.0
-    if sy32 { by = by - 32.0 }
-    let sy16 = by >= 16.0
-    if sy16 { by = by - 16.0 }
-    let sy8 = by >= 8.0
-    if sy8 { by = by - 8.0 }
-    let sy4 = by >= 4.0
-    if sy4 { by = by - 4.0 }
-    let sy2 = by >= 2.0
-    if sy2 { by = by - 2.0 }
-    let sy1 = by >= 1.0
-    ui.py512.set_visible(sy512)
-    ui.py256.set_visible(sy256)
-    ui.py128.set_visible(sy128)
-    ui.py64.set_visible(sy64)
-    ui.py32.set_visible(sy32)
-    ui.py16.set_visible(sy16)
-    ui.py8.set_visible(sy8)
-    ui.py4.set_visible(sy4)
-    ui.py2.set_visible(sy2)
-    ui.py1.set_visible(sy1)
-}
 
-fn pet_set_pos(x, y){
-    let w = pet_w_of(pet_size_i)
-    let h = pet_h_of(pet_size_i)
-    let maxx = 412.0 - w - 4.0
-    let maxy = 723.0 - h - 4.0
-    if maxx < 4.0 { maxx = 4.0 }
-    if maxy < 4.0 { maxy = 4.0 }
-    if x < 4.0 { x = 4.0 }
-    if x > maxx { x = maxx }
-    if y < 4.0 { y = 4.0 }
-    if y > maxy { y = maxy }
-    let nx = floor(x)
-    let ny = floor(y)
-    if nx == pet_px && ny == pet_py { return }
-    pet_px = nx
-    pet_py = ny
-    pet_spacers_sync()
-}
-
-fn pet_size_sync(){
-    ui.pet_s.set_visible(pet_size_i <= 0)
-    ui.pet_m.set_visible(pet_size_i == 1)
-    ui.pet_l.set_visible(pet_size_i == 2)
-    ui.pet_xl.set_visible(pet_size_i >= 3)
-}
 
 fn rip_layer_hide(){
     rip_on = false
@@ -3267,56 +3141,11 @@ let pf_open = false
 // ===== 读者画像面板（主编台「画像」）=====
 // 数据本身早就有（pf_* 系列，落盘 profile.json），这一版只是把它摆到主编台上：
 // 主人被记住的历史喜好要看得见、能补、能直接拿去选新闻，而不是藏在代码里。
-let pf_open = false
 
-fn bl_load(){
-    if bl_loaded { return }
-    bl_loaded = true
-    if !fs.exists("ask_log.json") { return }
-    let v = fs.read("ask_log.json").parse_json()
-    if v == nil { return }
-    let its = v["items"]
-    if its == nil { return }
-    let today = today_text()
-    for it in its {
-        let d = ""
-        if it["d"] != nil { d = "" + it["d"] }
-        if d != today { continue }
-        let one = {d: d kind: "" q: "" n: 0 top: "" st: ""}
-        if it["kind"] != nil { one.kind = "" + it["kind"] }
-        if it["q"] != nil { one.q = "" + it["q"] }
-        if it["n"] != nil { one.n = it["n"] }
-        if it["top"] != nil { one.top = "" + it["top"] }
-        if it["st"] != nil { one.st = "" + it["st"] }
-        bl_items.push(one)
-    }
-}
 
-fn bl_save(){
-    let today = today_text()
-    let keep = []
-    for it in bl_items {
-        if it.d == today { keep.push(it) }
-    }
-    fs.write("ask_log.json", {schema: 1 saved_at: time_now() items: keep}.to_json())
-}
 
 // 记一条「正在查」。等主编把结果端回来再回填条数与标题。
-fn bl_text(i){
-    if i < 0 || i >= bl_items.len() { return "" }
-    let one = bl_items[i]
-    let head = "" + one.kind + " · " + ("" + one.n) + " 条 · " + ("" + one.st)
-    // 时间戳只取「今天 + 序号」，够认出来是哪一次问的即可
-    "第 " + ("" + (i + 1)) + " 次询问  " + head
-}
 
-fn bl_top_text(i){
-    if i < 0 || i >= bl_items.len() { return "" }
-    let one = bl_items[i]
-    if one.top != "" { return one.top }
-    if one.q != "" { return "问的是：" + art_cut(one.q, 30) }
-    ""
-}
 
 fn bl_sync(){
     bl_load()
@@ -3337,19 +3166,7 @@ fn bl_sync(){
     ui.bl_empty.set_visible(n == 0)
 }
 
-fn bl_head_text(){
-    bl_load()
-    let n = bl_items.len()
-    if n == 0 { return "今天还没问过我什么。" }
-    "今天问了 " + ("" + n) + " 次，账都记在这儿"
-}
 
-fn bl_pill_text(){
-    // 这一行五个胶囊是均分面板宽度的，每个只有 ~58px。
-    // 写「📋 浏览记录」会被裁成「浏」—— 保持两字，跟 聊天/出报/配图/分析 齐平。
-    if bl_open { return "收起" }
-    "记录"
-}
 
 // =====================================================================
 // 读者画像面板 · 主编台「画像」
@@ -3368,34 +3185,9 @@ fn pf_sync(){
     ui.pf_notes_lbl.set_text(pf_notes_line())
 }
 
-fn pf_head_text(){
-    // 标题只留一行。「还不认识你」这层意思下面 pf_stat/pf_focus 已经说清了，
-    // 头一行再拖一句解释会折成两行，把面板顶高一截。
-    if pf_briefs == 0 && pf_opens == 0 && pf_notes.len() == 0 { return "主编还不认识你" }
-    "主编记住的你"
-}
 
-fn pf_stat_text(){
-    "已出报 " + ("" + pf_briefs) + " 期 · 读过 " + ("" + pf_opens) + " 条 · 只存在这台机器上，不上传"
-}
 
-fn pf_focus_text(){
-    let out = ""
-    for t in pf_t {
-        if t.n > 0 {
-            if out != "" { out = out + " · " }
-            out = out + pf_label(t.id) + " " + ("" + t.n) + " 次"
-        }
-    }
-    if out == "" { return "常读：还没看出偏向 —— 多读几条，它就知道了。" }
-    "常读：" + out
-}
 
-fn pf_notes_head_text(){
-    let n = pf_notes.len()
-    if n == 0 { return "你亲口要它记住的：还没有" }
-    "你亲口要它记住的 " + ("" + n) + " 条"
-}
 
 fn pf_toggle(){
     pf_open = !pf_open
@@ -3408,13 +3200,6 @@ fn pf_toggle(){
 // 偏好必须是主人亲口说的，卡里不替他编。主编收到后会调 remember_reader 落库。
 // 把一次询问写进主编的对话里（沿用主编那套 22 件工具的链路，
 // 它自己会去联网取数、筛选、落到本报上）。
-fn bl_log_line(){
-    let n = bl_items.len()
-    if n == 0 { return }
-    let one = bl_items[n - 1]
-    ag_log.push({who: "tool" text: "浏览记录 +1：" + one.kind + " · " + ("" + one.n) + " 条 · " + art_cut(one.top, 40)})
-    ag_trim_log()
-}
 
 // 向主编问某品类：界面上立刻亮一条「正在查」，再让主编去干活。
 fn pet_stock_expr(){
@@ -3960,14 +3745,6 @@ fn guga_voice_name(){
 // 以前这事儿看不出来 —— 读者只会觉得「主编怎么跟桌宠不是一个人」。
 // 现在选中的是哪把嗓子直接写在状态行里，出问题一眼能定位
 // （比如显示成「系统音色 …Huihui」就说明语音桥没被宿主接上）。
-fn guga_voice_name(){
-    if vc_voice == "" { return "宿主默认音色" }
-    if vc_has(vc_voice, "Xiaoyi") { return "软萌少女音 · 与桌面版桌宠同款" }
-    if vc_has(vc_voice, "Xiaoxiao") { return "年轻女声 · 云端神经音色" }
-    if vc_has(vc_voice, "Yaoyao") { return "系统少女音" }
-    if vc_has(vc_voice, "Huihui") { return "系统音色（成熟女声，偏机械）" }
-    "音色 " + vc_voice
-}
 fn trail_set_judge(model, ms, intro, rows, dl){
     if trail.len() == 0 { return }
     let j = trail["judge"]
@@ -4537,42 +4314,7 @@ fn guga_outro(){
 }
 
 // 给一条挑一句私货。题材命中就按题材说，否则按信源档位说。
-fn guga_take(r, i){
-    let title = "" + r.title
-    let topic = ""
-    if vc_has(title, "芯片") || vc_has(title, "半导体") || vc_has(title, "GPU") { topic = "chip" }
-    else if vc_has(title, "开源") || vc_has(title, "GitHub") || vc_has(title, "Rust") { topic = "oss" }
-    else if vc_has(title, "安全") || vc_has(title, "漏洞") || vc_has(title, "攻击") { topic = "sec" }
-    else if vc_has(title, "融资") || vc_has(title, "估值") || vc_has(title, "收购") { topic = "money" }
-    else if vc_has(title, "AI") || vc_has(title, "模型") || vc_has(title, "智能体") { topic = "ai" }
-    // 种子 = 条号 × 13 + 标题长度：让同一条在同一期里稳定取到同一句，
-    // 不同条之间又不容易撞（原来只用条号 + 长度，第 1 条和第 4 条撞过同一句）。
-    let seed = i * 13 + title.len()
-    if topic != "" {
-        let t = guga_take_pick(topic, seed)
-        if t != "" { return t }
-    }
-    guga_take_pick(tier_of(r), seed)
-}
 
-fn guga_outro(){
-    let rows = rv_rows()
-    let n = rows.len()
-    if n == 0 { return "今天就到这儿，本鹅明天接着给你盯。" }
-    let f = 0
-    for r in rows {
-        if tier_of(r) == "first" { f = f + 1 }
-    }
-    let mood = ""
-    if f >= 4 { mood = "今天一手料 " + ("" + f) + " 条，本鹅说话难得这么硬气。" }
-    else if f >= 1 { mood = "今天一手料 " + ("" + f) + " 条，剩下的是本鹅替你筛过的二手。" }
-    else { mood = "今天全是转述来的，本鹅念得不太痛快，将就看。" }
-    let on = guga_outros.len()
-    let sign = ""
-    if on > 0 { sign = guga_outros[guga_mod(n + f, on)] }
-    if sign == "" { return mood }
-    mood + " " + sign
-}
 
 fn rv_build(){
     rv_q = []
@@ -4838,74 +4580,14 @@ fn bl_toggle(){
 // =====================================================================
 // 拖动：dx/dy 是相对按下的累计偏移（宿主 GestureView 的口径）。
 // 拖的过程里只切占位控件，绝不重建桌宠本体 —— 这是手势能一路跟到 phase 2 的原因。
-fn pet_pan(dx, dy, phase){
-    if phase == 0 {
-        pet_drag_on = true
-        pet_drag_x0 = pet_px
-        pet_drag_y0 = pet_py
-        pet_line = "咕嘎～轻点放，本鹅会头晕的。"
-        pet_line_until = time_now() + 2.0
-        pet_sync_bubble()
-        return
-    }
-    if phase == 1 {
-        pet_set_pos(pet_drag_x0 + dx, pet_drag_y0 + dy)
-        return
-    }
-    pet_set_pos(pet_drag_x0 + dx, pet_drag_y0 + dy)
-    pet_drag_on = false
-    pet_geo_save()
-}
 
 // 捏合缩放（触屏；鼠标上不产生这个事件）—— 用累计倍数跨过阈值就换一档。
 // 记一条「正在查」。等主编把结果端回来再回填条数与标题。
-fn bl_begin(kind, q){
-    bl_load()
-    bl_start_fin = "" + finished_at
-    let one = {d: today_text() kind: kind q: q n: 0 top: "" st: "正在联网查"}
-    bl_items.push(one)
-    bl_pending = bl_items.len() - 1
-    bl_save()
-    bl_sync()
-    return bl_pending
-}
 
 // 主编那边一旦把这一期做出来（phase 走到 done），就把真结果回填进刚才那条。
 // 挂在这里而不是和模型回调耦合：出报路径只有一条，phase 是它唯一的收敛信号。
 // 主编那边一旦把这一期做出来（phase 走到 done），就把真结果回填进刚才那条。
 // 挂在这里而不是和模型回调耦合：出报路径只有一条，phase 是它唯一的收敛信号。
-fn bl_harvest(){
-    if bl_pending < 0 { return false }
-    if phase != "done" { return false }
-    let key = "" + finished_at
-    if key == bl_last_harvest { return false }
-    bl_last_harvest = key
-    let i = bl_pending
-    bl_pending = -1
-    if i < 0 || i >= bl_items.len() { return false }
-    let one = bl_items[i]
-    let n = picked.len()
-    one.n = n
-    let tops = ""
-    let c = 0
-    for r in picked {
-        if c >= 3 { break }
-        let tt = ""
-        if r["title"] != nil { tt = "" + r["title"] }
-        if tt != "" {
-            if c > 0 { tops = tops + " ／ " }
-            tops = tops + art_cut(tt, 26)
-        }
-        c = c + 1
-    }
-    one.top = tops
-    if n > 0 { one.st = "已汇总" } else { one.st = "没查到干净的条目" }
-    bl_items[i] = one
-    bl_save()
-    bl_sync()
-    bl_log_line()
-    true
-}
 
 // 主编这条路走不通时，把「正在联网查」那条如实收尾。
 // 一条永远停在「正在查」的记录，比一条写着失败原因的记录更误导人 ——
@@ -4913,59 +4595,13 @@ fn bl_harvest(){
 // 主编这条路走不通时，把「正在联网查」那条如实收尾。
 // 一条永远停在「正在查」的记录，比一条写着失败原因的记录更误导人 ——
 // 饲养员会以为查询还在跑，其实早就断了。
-fn bl_fail(why){
-    if bl_pending < 0 { return }
-    let i = bl_pending
-    bl_pending = -1
-    if i < 0 || i >= bl_items.len() { return }
-    let one = bl_items[i]
-    one.st = "没查成：" + art_cut(why, 26)
-    bl_items[i] = one
-    bl_save()
-    bl_sync()
-    ag_log.push({who: "tool" text: "浏览记录 +1：" + one.kind + " · " + one.st})
-    ag_trim_log()
-}
 
 // 一轮对话收尾时调用。出报成功的那条由 bl_harvest 回填（phase 走到 done），
 // 这里只管「这一轮压根没出报」的情况，避免记录悬着。
 // 一轮对话收尾时调用。出报成功的那条由 bl_harvest 回填（phase 走到 done），
 // 这里只管「这一轮压根没出报」的情况，避免记录悬着。
-fn bl_settle(){
-    if bl_pending < 0 { return }
-    // 只有「这一轮把新一期做出来了」才算查成 —— finished_at 变了才是新一期，
-    // 否则会拿上一期的 picked 充数，把这次询问误记成「已汇总」。
-    if ("" + finished_at) != bl_start_fin {
-        if bl_harvest() { return }
-    }
-    bl_fail("主编这一轮没出报")
-}
 
-fn bl_sync(){
-    bl_load()
-    ui.bl_panel.set_visible(bl_open)
-    ui.bl_pill.set_text(bl_pill_text())
-    if !bl_open { return }
-    let n = bl_items.len()
-    ui.bl_head.set_text(bl_head_text())
-    ui.bl_r1_head.set_text(bl_text(n - 1))
-    ui.bl_r1_top.set_text(bl_top_text(n - 1))
-    ui.bl_r1.set_visible(n >= 1)
-    ui.bl_r2_head.set_text(bl_text(n - 2))
-    ui.bl_r2_top.set_text(bl_top_text(n - 2))
-    ui.bl_r2.set_visible(n >= 2)
-    ui.bl_r3_head.set_text(bl_text(n - 3))
-    ui.bl_r3_top.set_text(bl_top_text(n - 3))
-    ui.bl_r3.set_visible(n >= 3)
-    ui.bl_empty.set_visible(n == 0)
-}
 
-fn bl_toggle(){
-    bl_open = !bl_open
-    if bl_open { pf_open = false }
-    bl_sync()
-    pf_sync()
-}
 
 // =====================================================================
 // 读者画像面板 · 主编台「画像」
@@ -4981,22 +4617,7 @@ fn bl_toggle(){
 //   两个按钮也都是真动作：「记一条偏好」把输入行交给主人去说（主编会用
 //   remember_reader 落库）；「照着画像排一期」直接把画像当作选材依据发过去。
 // =====================================================================
-fn pf_sync(){
-    ui.pf_panel.set_visible(pf_open)
-    if !pf_open { return }
-    ui.pf_head.set_text(pf_head_text())
-    ui.pf_stat.set_text(pf_stat_text())
-    ui.pf_focus.set_text(pf_focus_text())
-    ui.pf_notes_head.set_text(pf_notes_head_text())
-    ui.pf_notes_lbl.set_text(pf_notes_line())
-}
 
-fn pf_toggle(){
-    pf_open = !pf_open
-    if pf_open { bl_open = false }
-    pf_sync()
-    bl_sync()
-}
 
 // 「记一条偏好」：不开新面板，直接把主编的输入行交给主人 ——
 // 偏好必须是主人亲口说的，卡里不替他编。主编收到后会调 remember_reader 落库。
@@ -8063,87 +7684,25 @@ fn bl_ask(kind, q){
     bl_sync()
 }
 
-fn pet_set_size(i){
-    if i < 0 { i = 0 }
-    if i > 3 { i = 3 }
-    if i == pet_size_i { return }
-    pet_size_i = i
-    pet_size_sync()
-    // 换小了可能压到边界，重新钳一次
-    pet_set_pos(pet_px, pet_py)
-    pet_geo_save()
-    pet_say_line(pet_pick(pet_lines_of("size")), false)
-}
 
 // 拖动：dx/dy 是相对按下的累计偏移（宿主 GestureView 的口径）。
 // 拖的过程里只切占位控件，绝不重建桌宠本体 —— 这是手势能一路跟到 phase 2 的原因。
 // 捏合缩放（触屏；鼠标上不产生这个事件）—— 用累计倍数跨过阈值就换一档。
-fn pet_pinch(scale, px, py, phase){
-    if phase == 0 { pet_pinch_on = true  pet_pinch_last = 1.0  return }
-    if !pet_pinch_on { return }
-    if scale >= pet_pinch_last + 0.45 {
-        pet_pinch_last = scale
-        pet_set_size(pet_size_i + 1)
-    }
-    else if scale <= pet_pinch_last - 0.28 {
-        pet_pinch_last = scale
-        pet_set_size(pet_size_i - 1)
-    }
-    if phase == 2 { pet_pinch_on = false }
-}
 
 // ===== 点击涟漪 · 点哪儿哪儿起一圈金色水波 =====
 //   见 main.splash 顶部说明：鼠标追踪式波纹做不到（脚本拿不到指针、传不了
 //   uniform），这里做「点击扩散环」——一样是「指尖落到水面上」的手感。
-let rip_on = false
-let rip_band = 1              // 0=上 1=中 2=下
 
-fn pf_open_from_menu(){
-    // 「画像」这一格：收主编台、开画像面板。
-    // 与浏览记录面板同位（同一竖排），两个同时开会顶到卡片外面，所以互斥。
-    pet_menu_close()
-    pf_open = true
-    bl_open = false
-    pf_sync()
-    bl_sync()
-    pet_say_line(pet_pick(pet_lines_of("profile")), false)
-}
 
 // 「记一条偏好」：不开新面板，直接把主编的输入行交给主人 ——
 // 偏好必须是主人亲口说的，卡里不替他编。主编收到后会调 remember_reader 落库。
-fn pf_add_hint(){
-    pf_open = false
-    pf_sync()
-    ag_open = true
-    ag_note = "说一条要我长期记住的偏好（比如「多关注开源社区」），我记下来，以后每一期都算数。"
-    sync_ui()
-    pet_say_line(pet_pick(pet_lines_of("profile")), false)
-}
 
 // 「照着画像排一期」：把画像当唯一选材依据发给主编，让它先出计划再取数。
 // 「照着画像排一期」：把画像当唯一选材依据发给主编，让它先出计划再取数。
-fn pf_use(){
-    pet_work_done("read")
-    pf_open = false
-    pf_sync()
-    pet_say_line(pet_pick(pet_lines_of("plan")), false)
-    ag_take("照着我的读者画像给我排一期：只挑我常读的那几类，别按大众口味选。先给我取数计划。",
-        "主编接手了：按你的画像选材。")
-}
 
 // 把一次询问写进主编的对话里（沿用主编那套 22 件工具的链路，
 // 它自己会去联网取数、筛选、落到本报上）。
 // 向主编问某品类：界面上立刻亮一条「正在查」，再让主编去干活。
-fn bl_ask(kind, q){
-    bl_load()
-    bl_begin(kind, q)
-    if !ag_open {
-        ag_open = true
-        ag_note = "主编正在替你跑这一条。"
-    }
-    ag_say(q)
-    bl_sync()
-}
 
 fn pet_toggle_bubble(){
     pet_bubble_on = !pet_bubble_on
