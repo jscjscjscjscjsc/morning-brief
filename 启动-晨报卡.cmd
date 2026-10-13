@@ -1,38 +1,31 @@
 @echo off
-rem ============================================================
-rem   Morning Brief (chen bao ka) - clear local launcher
-rem
-rem   Double-click me. I locate Python, then hand over to the
-rem   project's own validated launcher:  tools\launch.py
-rem
-rem   WHY DELEGATE: tools\launch.py is the single source of truth.
-rem   It picks the NEW card-host build (the one that knows the
-rem   "model" capability), wires up the AI path, and prints usage.
-rem   Launching card-host directly with a hand-written path is how
-rem   the card used to end up refused and blank.
-rem
-rem   Optional: pass a port, e.g.   启动-晨报卡.cmd --port 8170
-rem ============================================================
 chcp 65001 >nul
-title Morning Brief Launcher
+title 晨报卡（改版 UI）
 setlocal
 
-set "PY=%USERPROFILE%\.workbuddy\binaries\python\versions\3.13.12\python.exe"
-if not exist "%PY%" set "PY=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
-if not exist "%PY%" set "PY=python"
+rem 统一走 tools\launch.py：它会选好模型通路、语音桥、空闲端口，
+rem 并在旁边挂一只看门狗（万一界面白屏会自动把卡片拉起来）。
+set "ROOT=%~dp0"
+set "PYTHONIOENCODING=utf-8"
+set "PYTHONUTF8=1"
 
-echo.
-echo   Morning Brief launcher  -^>  tools\launch.py %*
-echo.
-
-"%PY%" "%~dp0tools\launch.py" %*
-set "RC=%ERRORLEVEL%"
-
-echo.
-if not "%RC%"=="0" (
-  echo   [launcher stopped with code %RC%] - please read the messages above.
+if not exist "%ROOT%tools\launch.py" (
+  echo 找不到启动器：%ROOT%tools\launch.py
   pause
+  exit /b 1
 )
-
-endlocal
-exit /b %RC%
+where python >nul 2>&1
+if errorlevel 1 (
+  echo 找不到 Python，请确认 Python 已安装并加入 PATH。
+  pause
+  exit /b 1
+)
+cd /d "%ROOT%"
+python -u tools\launch.py %*
+if errorlevel 1 (
+  echo.
+  echo 启动失败，请查看上方错误信息。
+  pause
+  exit /b 1
+)
+exit /b 0

@@ -6,9 +6,11 @@
 | --- | --- | --- |
 | `host-services.patch` | 给官方 `OctoSense-App-Hub` 加的**两个宿主服务**（`llm` = 模型 + 语音，`model` = 文本补全），含 `voice/edge.rs`：咕嘎的 edge-tts 软萌音桥 | **本轮 canonical**，已在 `a15580c` 上验证可干净应用 |
 | `host-image-minimax.patch` | 给官方 `makepad` 改的**生图后端**（`sys.photo` 走 MiniMax，回落 pollinations） | **本轮 canonical**，已在本机 `db4691d` 上验证可干净应用 |
+| `host-font-monospace-cjk.patch` | 给官方 `makepad` 修的**等宽字体缺 CJK 兜底**（`theme.font_code` 的中文渲染成豆腐块：页签「新报」、报头期号） | **本轮 canonical**，本机重建 card-host 后验证（细节见 `UPSTREAM-font-monospace.md`） |
 | `host-voice.patch` / `host-voice-card-host.patch` | 初赛那一轮提交的语音补丁 | **历史存档**：它的 `llm-service` 内容已被 `host-services.patch` 完整吸收；它对更早的上游 HEAD，**今天已经不能直接 `git apply`** |
 | `UPSTREAM-net-headers.md` | 报给上游的缺陷：`net.http_request` 拒绝保留头却不说明是哪个头 | 已定稿 |
 | `UPSTREAM-regex-p.md` | 报给上游的缺陷：`regex()` 不支持 `\p{...}`，且失败方式是「静默吞掉调用方」 | 已定稿 |
+| `UPSTREAM-font-monospace.md` | 报给上游的缺陷：International 字体集的等宽链只挂 LiberationMono，中文等宽整段豆腐 | 已定稿（含补丁与验证） |
 
 ## 为什么会有 `host-services.patch`
 

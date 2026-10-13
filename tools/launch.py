@@ -137,6 +137,7 @@ def find_bin(name, env_var, marker=None):
         return Path(v)
     # 2) 常见安装位置（新构建在前；不认 model 的旧构建会被 marker 挡掉）
     candidates = [
+        Path(r"D:\morning-brief\.local-tools\target\release") / name,
         Path(r"C:\rustbuild\octosense-hub\release") / name,
         Path(r"C:\rustbuild\octosense-hub\x86_64-pc-windows-gnu\release") / name,
     ]
@@ -155,6 +156,11 @@ def find_bin(name, env_var, marker=None):
 def find_octo():
     """官方 octo 驱动脚本。"""
     for base in (REPO.parent, REPO):
+        for b in (base, Path(r"D:\morning-brief"), Path(r"D:\morning-brief\OctoScript-App-Design-Flow")):
+            if (b / "OctoScript-App-Design-Flow" / "tools" / "octo").is_file():
+                return b / "OctoScript-App-Design-Flow" / "tools" / "octo"
+            if (b / "tools" / "octo").is_file():
+                return b / "tools" / "octo"
         c = base / "OctoScript-App-Design-Flow" / "tools" / "octo"
         if c.is_file():
             return c
@@ -370,7 +376,7 @@ def main():
         return 1
 
     hub = find_bin("hub.exe", "OCTO_HUB")
-    card_host = find_bin("card-host.exe", "OCTO_CARD_HOST", marker="model.complete")
+    card_host = find_bin("card-host.exe", "OCTO_CARD_HOST")
     if not hub or not card_host:
         say("[错误] 找不到运行组件 hub.exe / card-host.exe。")
         say("       请先按 07_官方仓库下载说明.md 下载并构建 OctoSense-App-Hub。")
@@ -421,9 +427,21 @@ def main():
             say("  咕嘎嗓子  桥在，但没找到装了 edge_tts 的 Python —— 会退回系统引擎")
     else:
         say("  咕嘎嗓子  未找到 tools/edge_tts_bridge.py，用系统语音引擎")
-    say("")
 
+    # 给卡片留一张字条：edge 桥已配置。开屏 CG 的配乐靠它决定要不要点播
+    # （开机头几秒的宿主往返不可靠，探嗓子的结果会静默丢失，字条不依赖往返）。
+    # 每次启动都重写：桥没了就把旧字条删掉，卡片的降级才不会踏空。
     app_data = Path(os.environ.get("TEMP", ".")) / "morning-brief-state"
+    bridge_flag = app_data / "morning-brief" / "voice-bridge.on"
+    try:
+        if env.get("GUGUA_VOICE_BRIDGE"):
+            bridge_flag.parent.mkdir(parents=True, exist_ok=True)
+            bridge_flag.write_text("edge-tts bridge configured by launch.py\n", encoding="utf-8")
+        elif bridge_flag.is_file():
+            bridge_flag.unlink()
+    except Exception as e:
+        say(f"  咕嘎嗓子  字条没写成（{e}）；CG 配乐会退回探嗓子路径")
+    say("")
 
     # 端口自愈：上一次的卡片要是没退干净，会一直占着端口，让下一次双击「没反应」。
     port, port_note = pick_port(args.port)
@@ -439,6 +457,26 @@ def main():
            "--port", str(port), "--timeout", str(args.timeout),
            "--detach", "--app-data", str(app_data)]
 
+    # 开屏配乐：B 版《木琴纸韵》。由启动器在卡片起窗前放 —— 卡片侧的宿主请求
+    # 在开机窗口里时灵时不灵（实测边界在 0~12 秒之间飘），而这边一声 PlaySound
+    # 是确定的。6.8 秒放完就退；字条改成 launcher-plays，卡片看到就不再自己点播。
+    music = BUNDLE / "assets" / "cg" / "b-music.wav"
+    if env.get("GUGUA_VOICE_BRIDGE") and music.is_file():
+        try:
+            flags = 0x00000008 | 0x00000200 if os.name == "nt" else 0
+            subprocess.Popen(
+                [sys.executable, "-c",
+                 "import winsound, time\n"
+                 "winsound.PlaySound(r'%s', winsound.SND_FILENAME | winsound.SND_ASYNC)\n"
+                 "time.sleep(7.5)\n" % str(music)],
+                creationflags=flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                close_fds=True)
+            if bridge_flag.is_file():
+                bridge_flag.write_text("launcher-plays\n", encoding="utf-8")
+            say("  开场配乐  B 版《木琴纸韵》（启动器直接播，卡片不再重复点播）")
+        except Exception as e:
+            say(f"  开场配乐  没放成（{e}）；交给卡片自己点播")
+    say("")
     say("  正在启动（首次约 5–15 秒）…")
     say(f"  窗口标题：Card host [remote]　端口：{port}")
     say("-" * 62)

@@ -42,6 +42,54 @@ CACHE_TTL = 7 * 24 * 3600
 
 _voice = VOICE_DEFAULT
 
+# 开屏 CG 配乐的哨兵文本：卡片说这句话 = 点播 B 版《木琴纸韵》。
+# 用带方括号的固定串而不是「真实句子」，是为了跟人话天然不撞车。
+CG_BGM_MARKER = "[CG-BGM]"
+_CG_BGM_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "my-entry", "morning-brief", "bundle", "assets", "cg", "b-music.wav")
+_cg_bgm_cache = None
+
+
+def _cg_bgm_offset(text):
+    """哨兵文本 -> 起始秒（None = 不是点播）。支持 [CG-BGM] 与 [CG-BGM:4.6]。"""
+    if text == CG_BGM_MARKER:
+        return 0.0
+    if text.startswith("[CG-BGM:") and text.endswith("]"):
+        try:
+            return float(text[len("[CG-BGM:"):-1])
+        except ValueError:
+            return None
+    return None
+
+
+def _cg_bgm(from_sec=0.0):
+    """读 bundle 里的配乐 wav，转成 24k 单声道 s16 的原始采样。
+
+    只在第一次读盘，之后常驻内存 —— CG 每次开机都要用，且不该再进一次网络。
+    `from_sec` 支持「从第几秒起的后半段」（落点对齐用）。
+    文件缺失 / 读不动时抛错，宿主会照常退回系统引擎（卡片侧无感）。
+    """
+    global _cg_bgm_cache
+    if _cg_bgm_cache is None:
+        import wave
+        with wave.open(_CG_BGM_PATH, "rb") as wf:
+            if wf.getsampwidth() != 2:
+                raise RuntimeError("cg bgm wav is not s16")
+            raw = wf.readframes(wf.getnframes())
+            sr = wf.getframerate()
+            ch = wf.getnframes()
+        if ch <= 0:
+            raise RuntimeError("cg bgm wav is empty")
+        _cg_bgm_cache = (raw, sr)
+    raw, sr = _cg_bgm_cache
+    if from_sec > 0.0:
+        start = int(from_sec * sr) * 2
+        if start >= len(raw):
+            raise RuntimeError("cg bgm offset beyond the track")
+        raw = raw[start:]
+    return raw, sr, False
+
 
 def _has_deps():
     """edge_tts + miniaudio 都在才算这个解释器能用。"""
@@ -217,6 +265,12 @@ def _mp3_to_pcm(mp3_bytes):
 
 def synth(text, voice, rate, pitch, use_cache=True):
     """同步合成一段，返回 (pcm_s16le_bytes, sample_rate, cached)。"""
+    # 开屏 CG 的配乐：卡片用一句哨兵文本走同一条嗓子通路点播 ——
+    # 宿主只认「Speak」，卡片也只需要一句「说话」，B 版配乐（木琴纸韵）
+    # 就顺着同一条 PCM 队列流进扬声器。文件就在 bundle 里，读一次缓存住。
+    _bgm_off = _cg_bgm_offset(text)
+    if _bgm_off is not None:
+        return _cg_bgm(_bgm_off)
     key = hashlib.sha256(
         (text + "|" + voice + "|" + rate + "|" + pitch).encode("utf-8")).hexdigest()[:32]
     if use_cache:

@@ -1,0 +1,34 @@
+diff --git a/platform/src/font_policy.rs b/platform/src/font_policy.rs
+index cb19468..34301da 100644
+--- a/platform/src/font_policy.rs
++++ b/platform/src/font_policy.rs
+@@ -369,13 +369,19 @@ pub fn declares_asset_path(&self, path: &str) -> bool {
+     assets: LATIN_ASSETS,
+ };
+ 
++/// 与 `MONOSPACE` 的区别只有一处：带 CJK 兜底。等宽栏里全是中文的场景
++/// （日报页签、报头期号）在 International 集下原本整段豆腐 —— 等宽链只挂了
++/// LiberationMono，而 lazy_chain 对 Monospace 角色返回 NO_LAZY_FONTS，
++/// 缺字直接无路可走。字体角色的规矩是「链必须覆盖全脚本」，这里补上。
++const INTERNATIONAL_MONOSPACE: &[FontAsset] = &[LIBERATION_MONO, LXGW_REGULAR, LXGW_BOLD];
++
+ const INTERNATIONAL_POLICY: FontPolicy = FontPolicy {
+     set: FontSet::International,
+     regular: FontChain { role: FontRole::Regular, members: INTERNATIONAL_REGULAR },
+     bold: FontChain { role: FontRole::Bold, members: INTERNATIONAL_BOLD },
+     italic: FontChain { role: FontRole::Italic, members: INTERNATIONAL_ITALIC },
+     bold_italic: FontChain { role: FontRole::BoldItalic, members: INTERNATIONAL_BOLD_ITALIC },
+-    monospace: FontChain { role: FontRole::Monospace, members: MONOSPACE },
++    monospace: FontChain { role: FontRole::Monospace, members: INTERNATIONAL_MONOSPACE },
+     icons: FontChain { role: FontRole::Icons, members: ICONS },
+     assets: INTERNATIONAL_ASSETS,
+ };
+@@ -552,7 +558,7 @@ fn policy_construction_has_ordered_latin_and_international_chains() {
+         assert_eq!(international.italic.members, INTERNATIONAL_ITALIC);
+         assert_eq!(international.bold_italic.members, INTERNATIONAL_BOLD_ITALIC);
+         assert!(international.lazy_chain(FontRole::Regular).is_empty());
+-        assert_eq!(international.monospace, latin.monospace);
++        assert_eq!(international.monospace.members, INTERNATIONAL_MONOSPACE);
+         assert_eq!(international.icons, latin.icons);
+     }
+ 

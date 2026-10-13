@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "name": "desktop",
+  "cycles": 20,
+  "clicks": 90,
+  "nodes": 79,
+  "runtime_errors": [],
+  "checks": [
+    "独立阅读位置",
+    "阅读潮汐持久化",
+    "前后跨期",
+    "关闭恢复",
+    "档案搜索",
+    "高频栏目切换"
+  ]
+}
