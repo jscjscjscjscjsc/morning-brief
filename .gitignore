@@ -36,11 +36,11 @@ desktop.ini
 # 本地联调产物（hub scan 的审核包、试听样本等，命令都在文档里，可随时重跑）
 build/
 
-# ⚠️ 永不提交：官方 PUBLISHING.md 明写「There is no separate index repository and
-# no octosense-org/publish-app GitHub action. Do not add a release workflow that
-# uses them.」而 octo publish 生成的这个 workflow 恰好调用了 hub 里不存在的
-# publisher-prepare/attach/verify/pack 子命令（见 生态贡献/ISSUE-02）。
-.github/workflows/publish-app.yml
+# 说明（2026-10-13 更新）：这里原来有一条 `.github/workflows/publish-app.yml` 的
+# 忽略规则——当时官方 PUBLISHING.md 写着「Do not add a release workflow」，而且
+# octo 生成的模板调用了 hub 里尚不存在的 publisher-* 子命令（见 生态贡献/ISSUE-02）。
+# 官方后来把这条路做出来了：SUBMITTING.md 现在要求每个应用仓库提交这个工作流，
+# publisher-prepare/attach/verify/pack 均已可用 —— 所以本规则已删，工作流已入库。
 # 本地编辑留的备份（每次大改前手抄一份，不进版本库）
 *.bak_*
 *.r38work
