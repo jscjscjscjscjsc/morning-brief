@@ -1,0 +1,64 @@
+test_app_with_own_git_repository_remains_publishable (test_github_publish.PublishingSetup.test_app_with_own_git_repository_remains_publishable) ... ok
+test_custom_workflow_needs_explicit_replacement (test_github_publish.PublishingSetup.test_custom_workflow_needs_explicit_replacement) ... ok
+test_github_metadata_never_gets_restamped_or_unsigned_escape (test_github_publish.PublishingSetup.test_github_metadata_never_gets_restamped_or_unsigned_escape) ... ok
+test_installer_is_idempotent_and_does_not_publish (test_github_publish.PublishingSetup.test_installer_is_idempotent_and_does_not_publish) ... ok
+test_linked_worktree_root_remains_publishable (test_github_publish.PublishingSetup.test_linked_worktree_root_remains_publishable) ... ok
+test_nested_app_in_linked_worktree_is_rejected (test_github_publish.PublishingSetup.test_nested_app_in_linked_worktree_is_rejected) ... FAIL
+test_nested_app_is_rejected_before_workflow_writes (test_github_publish.PublishingSetup.test_nested_app_is_rejected_before_workflow_writes) ... 
+  test_nested_app_is_rejected_before_workflow_writes (test_github_publish.PublishingSetup.test_nested_app_is_rejected_before_workflow_writes) (replace=False) ... FAIL
+  test_nested_app_is_rejected_before_workflow_writes (test_github_publish.PublishingSetup.test_nested_app_is_rejected_before_workflow_writes) (replace=True) ... FAIL
+test_new_nested_app_is_rejected_before_destination_creation (test_github_publish.PublishingSetup.test_new_nested_app_is_rejected_before_destination_creation) ... FAIL
+test_new_nested_system_app_remains_supported (test_github_publish.PublishingSetup.test_new_nested_system_app_remains_supported) ... ok
+test_new_standalone_app_remains_supported (test_github_publish.PublishingSetup.test_new_standalone_app_remains_supported) ... ok
+test_release_receipt_does_not_invent_submission_status (test_github_publish.PublishingSetup.test_release_receipt_does_not_invent_submission_status) ... ok
+test_run_refuses_sealed_releases_before_startup_or_file_writes (test_github_publish.PublishingSetup.test_run_refuses_sealed_releases_before_startup_or_file_writes) ... ok
+test_sealed_bundle_is_not_used_as_editable_repository (test_github_publish.PublishingSetup.test_sealed_bundle_is_not_used_as_editable_repository) ... ok
+test_symlinks_cannot_redirect_workflow_writes (test_github_publish.PublishingSetup.test_symlinks_cannot_redirect_workflow_writes) ... 
+  test_symlinks_cannot_redirect_workflow_writes (test_github_publish.PublishingSetup.test_symlinks_cannot_redirect_workflow_writes) (component='.github') ... skipped "Symlink creation unavailable: [WinError 1314] 客户端没有所需的特权。: '<FIXTURE>\\\\tmp0o5fiovu\\\\outside' -> '<FIXTURE>\\\\tmp0o5fiovu\\\\app\\\\.github'"
+  test_symlinks_cannot_redirect_workflow_writes (test_github_publish.PublishingSetup.test_symlinks_cannot_redirect_workflow_writes) (component='.github/workflows') ... skipped "Symlink creation unavailable: [WinError 1314] 客户端没有所需的特权。: '<FIXTURE>\\\\tmpqjn5ju8j\\\\outside' -> '<FIXTURE>\\\\tmpqjn5ju8j\\\\app\\\\.github\\\\workflows'"
+  test_symlinks_cannot_redirect_workflow_writes (test_github_publish.PublishingSetup.test_symlinks_cannot_redirect_workflow_writes) (component='.github/workflows/publish-app.yml') ... skipped "Symlink creation unavailable: [WinError 1314] 客户端没有所需的特权。: '<FIXTURE>\\\\tmp4k1x9dtv\\\\outside' -> '<FIXTURE>\\\\tmp4k1x9dtv\\\\app\\\\.github\\\\workflows\\\\publish-app.yml'"
+test_toolchain_ref_cannot_be_mutable_or_inject_workflow (test_github_publish.PublishingSetup.test_toolchain_ref_cannot_be_mutable_or_inject_workflow) ... ok
+test_typed_unsigned_null_signature_remains_authorable (test_github_publish.PublishingSetup.test_typed_unsigned_null_signature_remains_authorable) ... ok
+
+======================================================================
+FAIL: test_nested_app_in_linked_worktree_is_rejected (test_github_publish.PublishingSetup.test_nested_app_in_linked_worktree_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_github_publish.py", line 110, in test_nested_app_in_linked_worktree_is_rejected
+    self.assertRaises(SystemExit):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SystemExit not raised
+
+======================================================================
+FAIL: test_nested_app_is_rejected_before_workflow_writes (test_github_publish.PublishingSetup.test_nested_app_is_rejected_before_workflow_writes) (replace=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_github_publish.py", line 66, in test_nested_app_is_rejected_before_workflow_writes
+    template.assert_not_called()
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 910, in assert_not_called
+    raise AssertionError(msg)
+AssertionError: Expected 'publisher_workflow' to not have been called. Called 1 times.
+Calls: [call()].
+
+======================================================================
+FAIL: test_nested_app_is_rejected_before_workflow_writes (test_github_publish.PublishingSetup.test_nested_app_is_rejected_before_workflow_writes) (replace=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_github_publish.py", line 64, in test_nested_app_is_rejected_before_workflow_writes
+    self.assertRaises(SystemExit):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SystemExit not raised
+
+======================================================================
+FAIL: test_new_nested_app_is_rejected_before_destination_creation (test_github_publish.PublishingSetup.test_new_nested_app_is_rejected_before_destination_creation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_github_publish.py", line 85, in test_new_nested_app_is_rejected_before_destination_creation
+    self.assertRaises(SystemExit):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SystemExit not raised
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.722s
+
+FAILED (failures=4, skipped=3)
