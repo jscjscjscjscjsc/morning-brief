@@ -1,0 +1,112 @@
+{
+  "official_repository": "https://github.com/OctoSense-org/OctoSense-App-Hub",
+  "baseline": "386359153ed6377b5f047bd9ed2767a6a2ac2bc7",
+  "source_files": {
+    "crates/app-hub/src/client.rs": {
+      "baseline_sha256": "e3f02ab646eafea6dd2764dade813ed266f82c17bb3b1d384ba1eb492a720b45",
+      "working_bytes_sha256": "db065b3b7208df7eb4e46a8308a9e9a1f733b8d0ed30c8badd4e6f17db3d01d1"
+    },
+    "crates/app-hub/tests/install_layout.rs": {
+      "baseline_sha256": "ad8bea005212e1bccdcffda1fada519dae71c992c0a57db5c0be6b6ca9946f4f",
+      "working_bytes_sha256": "0f5421fc688e341adc1d1539bec27c721753e815b2b63e565db4ab46158ed03a"
+    },
+    "crates/appstore/src/lib.rs": {
+      "baseline_sha256": "af88f85b92023dd5496fadb7e25153c1a8c7c8546ba87c0af3d30deac13a4e74",
+      "working_bytes_sha256": "e6f278a96320c9e2f3c7243d180f7fc623c6a8c76817b96678bdde911945ba6a"
+    }
+  },
+  "patch_sha256": "d0b9acb28d7f4f9ea11d1dfe4234349d5e8f4914a3fd0c86364e341c9a8b067a",
+  "test_results": {
+    "baseline-function-red.txt": {
+      "groups": 1,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "all_ok": false
+    },
+    "contract-function-red.txt": {
+      "groups": 1,
+      "passed": 2,
+      "failed": 15,
+      "ignored": 0,
+      "all_ok": false
+    },
+    "contract-function-green.txt": {
+      "groups": 2,
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0,
+      "all_ok": true
+    },
+    "install-layout-green.txt": {
+      "groups": 1,
+      "passed": 20,
+      "failed": 0,
+      "ignored": 0,
+      "all_ok": true
+    },
+    "admission-suite.txt": {
+      "groups": 27,
+      "passed": 350,
+      "failed": 0,
+      "ignored": 0,
+      "all_ok": true
+    }
+  },
+  "counting_note": "The 20 install_layout tests also occur within the 350-test admission suite; do not add these totals together.",
+  "dependency_checkouts": {
+    "makepad": {
+      "revision": "975c5630e01b0f3f3ae16cafd2e0fce3c9a5f7d9",
+      "working_tree_changes": [
+        " M widgets/src/window.rs"
+      ]
+    },
+    "octoscript": {
+      "revision": "68f6a9df55692b5d8ef8873a12721e279a3f40d6",
+      "working_tree_changes": []
+    },
+    "octoscript-makepad": {
+      "revision": "65d30a091eee284ed45afe5b8502835563fb56f7",
+      "working_tree_changes": []
+    }
+  },
+  "validation_limitations": [
+    "Authentic App Hub Cargo workspace and Store/catalog/signature integration tests; no stub replacements used in the archived full-suite logs.",
+    "Sibling path dependencies use the official workspace patch mechanism but local revisions are older than the exact Git pins; makepad has a preexisting widgets/window.rs edit, untouched by this fix.",
+    "Tested on Windows with rustc/cargo 1.98.1, MinGW and an English temporary target path.",
+    "Cargo normalized four dependency entries in Cargo.lock during local resolution; these environment-only changes were restored and are excluded from the patch.",
+    "The function harness is supplemental: it excludes Store, catalog signatures and full App Hub integration.",
+    "No GUI/shell end-to-end run, appstore package suite, Unix run or official upstream PR is claimed.",
+    "No guarantee is made against an external process racing filesystem validation and rename."
+  ],
+  "evidence_sha256": {
+    ".gitattributes": "f785d42574827c209e8e93e93f911f43f7a4f31e96d46a38fa996c8e3ac6b1da",
+    "admission-suite.json": "bb37fb1ff84805585d36c5d6f55dcd0661d7d3d6ef87801ba8d25a57abccc791",
+    "admission-suite.txt": "c91a39b481fc266b75ea621d79f8f6307968bf14ed48305583e5021ca2c5fa81",
+    "baseline-function-red.txt": "54f53de234b8c6188355e8b88d113010eee7158efa0c8914072118676241843e",
+    "baseline_migration.rs": "16967ef3dec673bddcb05dce0cc85b8e03c213fd7383c68cddae24c1f862ed7e",
+    "clean-apply.json": "0a7fc952baf4e7deecfb2a5f7bc06c890e86a735712ec47579950364bb85be9e",
+    "contract-function-green.txt": "484c3b32c7bf29cd702628bd213bca5a2a47e12329a0390bead3e111dc005e50",
+    "contract-function-red.txt": "d5a1d96cbb62b2b34b4acb369d56dfc013602b2c78a53f52a291bbfaba9690af",
+    "install-layout-green.txt": "3b7d40adc7a2b043c88b9f82cf65fbde56ec6f3ea7c5b72132713cfb1d0bac1f",
+    "portable-apply-check.txt": "c93b13dc8bdd74299b60315f9dd07c709b07cc38735137ca27409ed4b26f3d6b",
+    "portable-apply.txt": "d0b76d700ecc0601f785bd027c23066f96bfefb142fd831e37f05e046073426e",
+    "portable-archive.txt": "cbfb48f0a3dd2d7f7e2d28ddfee84530c40e3b23e7463537bb46ebbba0c2eead",
+    "portable-cargo-version.txt": "36b595efd8f0ad7488d8254e8b7c604a218691c796d8af9815d8413721b05053",
+    "portable-green-extraction.json": "daa8fcdeff3ce37ebbe7ff0a6ff1071b0743e63aae46992a46760f122064f646",
+    "portable-green.txt": "2a19a698bae08b9525d7c61e7fc09bee51df96331ba0211f003a55e60f609c2b",
+    "portable-red-extraction.json": "8464475e7e854e16d8b561429f7a58f995bd8a1c68a71402ce6b7fb1ddca3e57",
+    "portable-red.txt": "9b574ee7676cfdcde27cbd34d7455a95490fd096f9d31a0452722876f4ded5e0",
+    "portable-revision.txt": "66e4cbd2b2f98cc0c80968413572842b8f423819f2f57e1223cd2f0bbdce9dcc",
+    "portable-summary.json": "e5df4fec2cd7593b689febb91ce3f4b63ffb44667afc35aefab7d8e6b31942bb",
+    "repository-checks.txt": "87f345bf75b6a4822ee4894ddba880b1e9cfce4afd20056276e2b8cf82ee907d"
+  },
+  "portable_verifier": {
+    "summary": "portable-summary.json",
+    "script_sha256": "c483e394509170665ae604227da26c903d6e28f4a7b84afad0c6c8f3ae9bab62",
+    "cases_sha256": "550d4cbac079d3f76fa2c756aaa01a5854117bb2ae5aef5e041a2923efc8baae",
+    "patched_lf_client_sha256": "0029ac2a8b699a25cde13997941d960193d0f04b85df9957bdacf1980b1c0f1a",
+    "canonical_content_note": "Portable clean archive uses LF. Raw working-byte hashes may differ in line endings; canonical LF contents and migration function hashes match.",
+    "same_contract_and_cargo_lock_in_red_and_green": true
+  }
+}

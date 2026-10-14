@@ -18,6 +18,8 @@
 
 两版的制作说明、真实录制口径与"未逐项演示的功能"诚实清单，见 [`promo/README.md`](promo/README.md)。
 
+**第 47 轮生态修复（2026-10-14）**：修复 App Hub 自动迁移把应用的 `bundle` 等普通数据目录误删的问题；全新安装也可触发。真实安装布局测试 20 项通过，准入三包完整测试 350 项通过（包含这 20 项）。[中文报告](生态贡献/ISSUE-10-AppHub迁移误删应用数据.md) · [补丁](my-entry/patches/app-hub-legacy-migration-data-loss.patch) · [前后证据与验证限制](my-entry/evidence/hub-migration-20261014/README.md) · [交接](进度交接_第47轮后.md)。
+
 **第 46 轮生态修复（2026-10-14）**：修复发布工具在嵌套目录假成功、Windows UTF-8/LF 和 Git worktree 恢复问题。[中文介绍与报告](生态贡献/README.md) · [可应用补丁](my-entry/patches/README.md) · [前后验证证据](my-entry/evidence/ecosystem-20261014/README.md) · [本轮交接](进度交接_第46轮后.md)。
 
 **官方生态贡献 · Script VM 修复（2026-10-14）**：晨报卡开发过程中定位并修复了官方 Script VM 的栈失衡 bug（`if { for } else` 分支交接值缺失导致 `pop_stack_value on empty stack`、`on_render` 输出被静默丢弃），已向官方提修复 PR：[OctoSense-org/makepad#126](https://github.com/OctoSense-org/makepad/pull/126)（修复 issue [OctoSense-org/OctoSense#492](https://github.com/OctoSense-org/OctoSense/issues/492)）。修复把 `if`/`elif`/`else`、`match`、`try`/`catch` 的全部"无值分支"纳入覆盖，附 8 组回归测试。

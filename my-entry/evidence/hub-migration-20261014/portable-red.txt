@@ -1,0 +1,145 @@
+Command: D:\octosense\rustup-home\toolchains\stable-x86_64-pc-windows-gnu\bin\cargo.exe test --color never --manifest-path C:\Windows\Temp\hub-migration-portable-final\hub-migration-0ybp4td2\red\Cargo.toml -p hub-migration-function-validation --lib --offline -- --show-output --test-threads=1
+Exit code: 101
+
+     Locking 49 packages to latest compatible versions
+      Adding base64 v0.22.1 (available: v0.23.1)
+   Compiling octosense-app-contract v1.12.0 (C:\Windows\Temp\hub-migration-portable-final\hub-migration-0ybp4td2\red\contract)
+   Compiling hub-migration-function-validation v0.0.0 (C:\Windows\Temp\hub-migration-portable-final\hub-migration-0ybp4td2\red)
+warning: unused import: `octosense_app_contract as octosense_app_policy`
+ --> src\lib.rs:2:5
+  |
+2 | use octosense_app_contract as octosense_app_policy;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `hub-migration-function-validation` (lib test) generated 1 warning (run `cargo fix --lib -p hub-migration-function-validation --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.23s
+     Running unittests src\lib.rs (C:\Windows\Temp\hub-migration-portable-final\cargo-target\debug\deps\hub_migration_function_validation-a9de88dd61629abb.exe)
+
+running 17 tests
+test cases::completed_legacy_updates_keep_the_published_bundle ... FAILED
+test cases::current_install_preserves_data_named_bundle ... FAILED
+test cases::current_install_preserves_update_name_data ... FAILED
+test cases::digest_mismatch_is_not_migrated ... FAILED
+test cases::empty_modern_root_retries_the_verified_legacy_move ... ok
+test cases::incomplete_modern_install_preserves_all_legacy_paths ... FAILED
+test cases::linked_app_directory_is_not_followed ... FAILED
+test cases::linked_installs_directory_is_not_followed ... FAILED
+test cases::linked_legacy_bundle_paths_are_preserved ... FAILED
+test cases::manifest_id_mismatch_is_not_migrated ... FAILED
+test cases::next_only_valid_bundle_is_not_published ... FAILED
+test cases::unknown_data_directories_with_invalid_manifests_stay ... FAILED
+test cases::unknown_data_files_stay ... FAILED
+test cases::valid_bundle_preserves_unknown_update_data ... FAILED
+test cases::valid_legacy_moves_once_and_preserves_data ... ok
+test cases::valid_previous_recovers_beside_unknown_bundle ... FAILED
+test cases::valid_previous_recovers_without_bundle_and_preserves_next ... FAILED
+
+successes:
+
+successes:
+    cases::empty_modern_root_retries_the_verified_legacy_move
+    cases::valid_legacy_moves_once_and_preserves_data
+
+failures:
+
+---- cases::completed_legacy_updates_keep_the_published_bundle stdout ----
+
+thread 'cases::completed_legacy_updates_keep_the_published_bundle' (18672) panicked at src\cases.rs:151:56:
+assertion failed: f.old(name).join("manifest.json").is_file()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- cases::current_install_preserves_data_named_bundle stdout ----
+
+thread 'cases::current_install_preserves_data_named_bundle' (33700) panicked at src\cases.rs:41:104:
+called `Result::unwrap()` on an `Err` value: Os { code: 3, kind: NotFound, message: "系统找不到指定的路径。" }
+
+---- cases::current_install_preserves_update_name_data stdout ----
+
+thread 'cases::current_install_preserves_update_name_data' (3596) panicked at src\cases.rs:41:104:
+called `Result::unwrap()` on an `Err` value: Os { code: 3, kind: NotFound, message: "系统找不到指定的路径。" }
+
+---- cases::digest_mismatch_is_not_migrated stdout ----
+
+thread 'cases::digest_mismatch_is_not_migrated' (33368) panicked at src\cases.rs:119:70:
+called `Result::unwrap()` on an `Err` value: Os { code: 3, kind: NotFound, message: "系统找不到指定的路径。" }
+
+---- cases::incomplete_modern_install_preserves_all_legacy_paths stdout ----
+
+thread 'cases::incomplete_modern_install_preserves_all_legacy_paths' (9576) panicked at src\cases.rs:83:5:
+assertion failed: !installed_bundle_dir(&f.apps, "example-app").exists()
+
+---- cases::linked_app_directory_is_not_followed stdout ----
+
+thread 'cases::linked_app_directory_is_not_followed' (13568) panicked at src\cases.rs:168:5:
+assertion failed: outside.join("bundle/manifest.json").is_file()
+
+---- cases::linked_installs_directory_is_not_followed stdout ----
+
+thread 'cases::linked_installs_directory_is_not_followed' (13836) panicked at src\cases.rs:176:5:
+assertion failed: f.old("bundle").join("manifest.json").is_file()
+
+---- cases::linked_legacy_bundle_paths_are_preserved stdout ----
+
+thread 'cases::linked_legacy_bundle_paths_are_preserved' (17648) panicked at src\cases.rs:183:50:
+called `Result::unwrap()` on an `Err` value: "cannot move example-app's install out of its storage (an interrupted download): 拒绝访问。 (os error 5)"
+
+---- cases::manifest_id_mismatch_is_not_migrated stdout ----
+
+thread 'cases::manifest_id_mismatch_is_not_migrated' (27264) panicked at src\cases.rs:113:5:
+assertion failed: legacy.join("manifest.json").is_file()
+
+---- cases::next_only_valid_bundle_is_not_published stdout ----
+
+thread 'cases::next_only_valid_bundle_is_not_published' (21976) panicked at src\cases.rs:144:5:
+assertion failed: f.old(".bundle-next").join("manifest.json").is_file()
+
+---- cases::unknown_data_directories_with_invalid_manifests_stay stdout ----
+
+thread 'cases::unknown_data_directories_with_invalid_manifests_stay' (28448) panicked at src\cases.rs:98:5:
+assertion failed: !install_root(&f.apps, "example-app").exists()
+
+---- cases::unknown_data_files_stay stdout ----
+
+thread 'cases::unknown_data_files_stay' (12040) panicked at src\cases.rs:107:109:
+called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "系统找不到指定的文件。" }
+
+---- cases::valid_bundle_preserves_unknown_update_data stdout ----
+
+thread 'cases::valid_bundle_preserves_unknown_update_data' (9680) panicked at src\cases.rs:41:104:
+called `Result::unwrap()` on an `Err` value: Os { code: 3, kind: NotFound, message: "系统找不到指定的路径。" }
+
+---- cases::valid_previous_recovers_beside_unknown_bundle stdout ----
+
+thread 'cases::valid_previous_recovers_beside_unknown_bundle' (24560) panicked at src\cases.rs:44:9:
+assertion `left == right` failed
+  left: "82348d9dcdaf71b65abd79474bfc9d5d88fc6be81d9160ebf2f8e96c6a94a916"
+ right: "d679f588578b667d002197e1549ab8cd8a842d937fd727e1db5fd9bcfa9b35c4"
+
+---- cases::valid_previous_recovers_without_bundle_and_preserves_next stdout ----
+
+thread 'cases::valid_previous_recovers_without_bundle_and_preserves_next' (18072) panicked at src\cases.rs:41:104:
+called `Result::unwrap()` on an `Err` value: Os { code: 3, kind: NotFound, message: "系统找不到指定的路径。" }
+
+
+failures:
+    cases::completed_legacy_updates_keep_the_published_bundle
+    cases::current_install_preserves_data_named_bundle
+    cases::current_install_preserves_update_name_data
+    cases::digest_mismatch_is_not_migrated
+    cases::incomplete_modern_install_preserves_all_legacy_paths
+    cases::linked_app_directory_is_not_followed
+    cases::linked_installs_directory_is_not_followed
+    cases::linked_legacy_bundle_paths_are_preserved
+    cases::manifest_id_mismatch_is_not_migrated
+    cases::next_only_valid_bundle_is_not_published
+    cases::unknown_data_directories_with_invalid_manifests_stay
+    cases::unknown_data_files_stay
+    cases::valid_bundle_preserves_unknown_update_data
+    cases::valid_previous_recovers_beside_unknown_bundle
+    cases::valid_previous_recovers_without_bundle_and_preserves_next
+
+test result: FAILED. 2 passed; 15 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+
+error: test failed, to rerun pass `-p hub-migration-function-validation --lib`

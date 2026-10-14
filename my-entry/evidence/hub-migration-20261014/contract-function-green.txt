@@ -1,0 +1,86 @@
+{
+  "revision": "working-tree",
+  "source_client_rs_sha256": "db065b3b7208df7eb4e46a8308a9e9a1f733b8d0ed30c8badd4e6f17db3d01d1",
+  "extracted_function_sha256": "2821a63fa537ec5ca3273151dbf86ec47cb51a74df9b733309450da335eec796",
+  "contract_tree_sha256": "0f57a5ef3d16def7512b1b3596dcaf38c9dcea1389ec495c5ae83d36d8975e15",
+  "boundary": "Actual migration functions and actual app-contract; excludes Store, gate, catalog signatures, and full app-hub integration",
+  "bounded_admission_sha256": "14f9748dbc74559cea22e5f838e296408c1684abe1bae5ebe03899be46e7edc5",
+  "max_bundle_bytes_declaration": "pub const MAX_BUNDLE_BYTES: u64 = 8 * 1024 * 1024;"
+}
+
+Command: D:/octosense/rustup-home/toolchains/stable-x86_64-pc-windows-gnu/bin/cargo.exe test --offline -p hub-migration-function-validation --manifest-path build\hub-migration-20261014\contract-harness\Cargo.toml -- --nocapture
+Exit code: 0
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling hub-migration-function-validation v0.0.0 (E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\build\hub-migration-20261014\contract-harness)
+warning: constant `MAX_TEXT_BYTES` is never used
+ --> src\admission.rs:9:11
+  |
+9 | pub const MAX_TEXT_BYTES: u64 = 1024 * 1024;
+  |           ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `MAX_IMAGE_DIMENSION` is never used
+  --> src\admission.rs:10:11
+   |
+10 | pub const MAX_IMAGE_DIMENSION: u32 = 4096;
+   |           ^^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_ICON_DIMENSION` is never used
+  --> src\admission.rs:12:11
+   |
+12 | pub const MAX_ICON_DIMENSION: u32 = 1024;
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_DECODED_BYTES` is never used
+  --> src\admission.rs:13:7
+   |
+13 | const MAX_DECODED_BYTES: u64 = 64 * 1024 * 1024;
+   |       ^^^^^^^^^^^^^^^^^
+
+warning: field `bytes` is never read
+  --> src\admission.rs:18:9
+   |
+16 | pub struct BundleFile {
+   |            ---------- field in this struct
+17 |     pub path: PathBuf,
+18 |     pub bytes: u64,
+   |         ^^^^^
+   |
+   = note: `BundleFile` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: `hub-migration-function-validation` (lib) generated 5 warnings
+warning: `hub-migration-function-validation` (lib test) generated 5 warnings (5 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.67s
+     Running unittests src\lib.rs (C:\Users\su\AppData\Local\Temp\hub-migration-contract-target-20261014\debug\deps\hub_migration_function_validation-a9de88dd61629abb.exe)
+
+running 17 tests
+test cases::unknown_data_directories_with_invalid_manifests_stay ... ok
+test cases::next_only_valid_bundle_is_not_published ... ok
+test cases::unknown_data_files_stay ... ok
+test cases::digest_mismatch_is_not_migrated ... ok
+test cases::current_install_preserves_data_named_bundle ... ok
+test cases::manifest_id_mismatch_is_not_migrated ... ok
+test cases::current_install_preserves_update_name_data ... ok
+test cases::valid_previous_recovers_beside_unknown_bundle ... ok
+test cases::empty_modern_root_retries_the_verified_legacy_move ... ok
+test cases::valid_legacy_moves_once_and_preserves_data ... ok
+test cases::valid_bundle_preserves_unknown_update_data ... ok
+test cases::valid_previous_recovers_without_bundle_and_preserves_next ... ok
+test cases::completed_legacy_updates_keep_the_published_bundle ... ok
+test cases::incomplete_modern_install_preserves_all_legacy_paths ... ok
+test cases::linked_app_directory_is_not_followed ... ok
+test cases::linked_installs_directory_is_not_followed ... ok
+test cases::linked_legacy_bundle_paths_are_preserved ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+   Doc-tests hub_migration_function_validation
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

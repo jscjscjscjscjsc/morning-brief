@@ -1,0 +1,20 @@
+{
+  "revision": "386359153ed6377b5f047bd9ed2767a6a2ac2bc7",
+  "patch_sha256": "d0b9acb28d7f4f9ea11d1dfe4234349d5e8f4914a3fd0c86364e341c9a8b067a",
+  "boundary": "Exact production migration functions, unchanged app-contract, and bounded admission helpers; excludes whole App Hub, Store, catalog/signature validation, and appstore UI integration.",
+  "red": {
+    "passed": 2,
+    "failed": 15,
+    "ignored": 0,
+    "filtered": 0,
+    "exit_code": 101
+  },
+  "green": {
+    "passed": 17,
+    "failed": 0,
+    "ignored": 0,
+    "filtered": 0,
+    "exit_code": 0
+  },
+  "clean_patch_applied": true
+}

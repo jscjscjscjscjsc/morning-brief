@@ -1,0 +1,14 @@
+{
+  "revision": "386359153ed6377b5f047bd9ed2767a6a2ac2bc7",
+  "patch_sha256": null,
+  "boundary": "Exact production migration functions, unchanged app-contract, and bounded admission helpers; excludes whole App Hub, Store, catalog/signature validation, and appstore UI integration.",
+  "client_rs_sha256": "e3f02ab646eafea6dd2764dade813ed266f82c17bb3b1d384ba1eb492a720b45",
+  "migration_functions_sha256": "c8a54445cd35ef3aa3d1e9654b3e55882e4dbbfda3597f1c3b0c8a11e2658f74",
+  "contract_tree_sha256": "93e1b2eb95a1924779d1999d93beaa9e9b7e1e56618b1fb5ed55e2887ae48b64",
+  "policy_reexport_files_sha256": {
+    "bundle": "56efebadf1d548f581150490d7ff2581e778ddf74fe8ab444b4a007fbb1f75bc",
+    "manifest": "fe9ff3813c76b16c21024f8c7d7dd6098bd25b0ec0a8cdd06615913f0a1b0bb7"
+  },
+  "cases_sha256": "550d4cbac079d3f76fa2c756aaa01a5854117bb2ae5aef5e041a2923efc8baae",
+  "harness_cargo_lock_sha256": "ac662ed6f7bd155caff8112a780f5f7a24733807d44e449c9d085d4ba96309cb"
+}

@@ -1,0 +1,89 @@
+Command: D:\octosense\rustup-home\toolchains\stable-x86_64-pc-windows-gnu\bin\cargo.exe test --color never --manifest-path C:\Windows\Temp\hub-migration-portable-final\hub-migration-0ybp4td2\green\Cargo.toml -p hub-migration-function-validation --lib --offline -- --show-output --test-threads=1
+Exit code: 0
+
+     Locking 49 packages to latest compatible versions
+      Adding base64 v0.22.1 (available: v0.23.1)
+   Compiling hub-migration-function-validation v0.0.0 (C:\Windows\Temp\hub-migration-portable-final\hub-migration-0ybp4td2\green)
+warning: constant `MAX_TEXT_BYTES` is never used
+ --> src\admission.rs:9:11
+  |
+9 | pub const MAX_TEXT_BYTES: u64 = 1024 * 1024;
+  |           ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `MAX_IMAGE_DIMENSION` is never used
+  --> src\admission.rs:10:11
+   |
+10 | pub const MAX_IMAGE_DIMENSION: u32 = 4096;
+   |           ^^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_ICON_DIMENSION` is never used
+  --> src\admission.rs:12:11
+   |
+12 | pub const MAX_ICON_DIMENSION: u32 = 1024;
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_DECODED_BYTES` is never used
+  --> src\admission.rs:13:7
+   |
+13 | const MAX_DECODED_BYTES: u64 = 64 * 1024 * 1024;
+   |       ^^^^^^^^^^^^^^^^^
+
+warning: field `bytes` is never read
+  --> src\admission.rs:18:9
+   |
+16 | pub struct BundleFile {
+   |            ---------- field in this struct
+17 |     pub path: PathBuf,
+18 |     pub bytes: u64,
+   |         ^^^^^
+   |
+   = note: `BundleFile` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: `hub-migration-function-validation` (lib test) generated 5 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.92s
+     Running unittests src\lib.rs (C:\Windows\Temp\hub-migration-portable-final\cargo-target\debug\deps\hub_migration_function_validation-a9de88dd61629abb.exe)
+
+running 17 tests
+test cases::completed_legacy_updates_keep_the_published_bundle ... ok
+test cases::current_install_preserves_data_named_bundle ... ok
+test cases::current_install_preserves_update_name_data ... ok
+test cases::digest_mismatch_is_not_migrated ... ok
+test cases::empty_modern_root_retries_the_verified_legacy_move ... ok
+test cases::incomplete_modern_install_preserves_all_legacy_paths ... ok
+test cases::linked_app_directory_is_not_followed ... ok
+test cases::linked_installs_directory_is_not_followed ... ok
+test cases::linked_legacy_bundle_paths_are_preserved ... ok
+test cases::manifest_id_mismatch_is_not_migrated ... ok
+test cases::next_only_valid_bundle_is_not_published ... ok
+test cases::unknown_data_directories_with_invalid_manifests_stay ... ok
+test cases::unknown_data_files_stay ... ok
+test cases::valid_bundle_preserves_unknown_update_data ... ok
+test cases::valid_legacy_moves_once_and_preserves_data ... ok
+test cases::valid_previous_recovers_beside_unknown_bundle ... ok
+test cases::valid_previous_recovers_without_bundle_and_preserves_next ... ok
+
+successes:
+
+successes:
+    cases::completed_legacy_updates_keep_the_published_bundle
+    cases::current_install_preserves_data_named_bundle
+    cases::current_install_preserves_update_name_data
+    cases::digest_mismatch_is_not_migrated
+    cases::empty_modern_root_retries_the_verified_legacy_move
+    cases::incomplete_modern_install_preserves_all_legacy_paths
+    cases::linked_app_directory_is_not_followed
+    cases::linked_installs_directory_is_not_followed
+    cases::linked_legacy_bundle_paths_are_preserved
+    cases::manifest_id_mismatch_is_not_migrated
+    cases::next_only_valid_bundle_is_not_published
+    cases::unknown_data_directories_with_invalid_manifests_stay
+    cases::unknown_data_files_stay
+    cases::valid_bundle_preserves_unknown_update_data
+    cases::valid_legacy_moves_once_and_preserves_data
+    cases::valid_previous_recovers_beside_unknown_bundle
+    cases::valid_previous_recovers_without_bundle_and_preserves_next
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+

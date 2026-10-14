@@ -1,0 +1,2 @@
+# Preserve captured log bytes so their SHA-256 values survive Git checkout.
+*.txt -text whitespace=cr-at-eol,-blank-at-eof

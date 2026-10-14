@@ -1,0 +1,31 @@
+Command: D:/octosense/rustup-home/toolchains/stable-x86_64-pc-windows-gnu/bin/cargo.exe test -p octosense-app-hub --test install_layout -- --nocapture
+Exit code: 0
+
+   Compiling octosense-app-hub v0.1.0 (E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\OctoSense-App-Hub\crates\app-hub)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.06s
+     Running tests\install_layout.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\install_layout-3fe76500f53fbf36.exe)
+
+running 20 tests
+test a_legacy_manifest_must_match_its_app_directory ... ok
+test ordinary_data_files_are_not_legacy_installs ... ok
+test an_unpublished_next_bundle_is_not_adopted ... ok
+test migration_preserves_app_data_named_after_update_directories ... ok
+test a_legacy_manifest_must_match_its_bundle_bytes ... ok
+test ordinary_data_directories_are_not_legacy_installs ... ok
+test migration_preserves_app_data_named_bundle_when_a_new_install_exists ... ok
+test an_empty_modern_directory_does_not_block_a_legacy_migration_retry ... ok
+test a_legacy_interrupted_update_is_settled_as_it_moves ... ok
+test recovery_preserves_user_data_at_the_old_bundle_path ... ok
+test an_interrupted_modern_install_preserves_all_legacy_paths ... ok
+test removing_an_app_removes_its_bundle_and_its_data ... ok
+test migrating_a_bundle_preserves_unknown_update_data ... ok
+test completed_legacy_updates_keep_the_published_bundle ... ok
+test an_installed_bundle_is_outside_the_apps_storage ... ok
+test a_legacy_install_moves_out_once_and_keeps_its_data ... ok
+test migration_does_not_follow_the_installs_directory_link ... ok
+test a_moved_install_does_not_replace_a_newer_one ... ok
+test migration_does_not_follow_an_app_directory_link ... ok
+test migration_preserves_links_at_legacy_bundle_paths ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+

@@ -1,0 +1,440 @@
+diff --git a/crates/app-hub/src/client.rs b/crates/app-hub/src/client.rs
+index 149bba0..667a311 100644
+--- a/crates/app-hub/src/client.rs
++++ b/crates/app-hub/src/client.rs
+@@ -55,36 +55,102 @@ pub fn adopt_legacy_installs(app_data_root: &Path) -> Result<(), String> {
+ 
+ /// Move one app's install from its storage (`<root>/<id>/bundle`, the
+ /// layout before [`INSTALLS_DIR`]) to [`installed_bundle_dir`]. An update
+-/// interrupted in the old layout is settled first, as the store's recovery
+-/// would; an install already in the new place wins over a stale old copy.
+-/// Nothing found is followed through a symlink.
++/// interrupted in the old layout can recover its matching, intact previous
++/// bundle. Once the new install directory has contents, the old names are app
++/// data. An empty new directory can be a move interrupted before its rename.
++/// Unrecognized data stays in place; no symlink or reparse point is followed.
+ pub fn adopt_legacy_install(app_data_root: &Path, app_id: &str) -> Result<(), String> {
++    fn plain(metadata: &std::fs::Metadata) -> bool {
++        if metadata.file_type().is_symlink() {
++            return false;
++        }
++        #[cfg(windows)]
++        {
++            use std::os::windows::fs::MetadataExt;
++            if metadata.file_attributes() & 0x400 != 0 {
++                return false;
++            }
++        }
++        metadata.is_dir() || metadata.is_file()
++    }
++    fn plain_tree(path: &Path, depth: usize, remaining: &mut usize) -> bool {
++        if depth > crate::admission::MAX_DEPTH + 1 || *remaining == 0 {
++            return false;
++        }
++        *remaining -= 1;
++        let Ok(metadata) = std::fs::symlink_metadata(path) else { return false };
++        if !plain(&metadata) {
++            return false;
++        }
++        if metadata.is_file() {
++            return true;
++        }
++        let Ok(entries) = std::fs::read_dir(path) else { return false };
++        entries.into_iter().all(|entry| entry.is_ok_and(|entry| plain_tree(&entry.path(), depth + 1, remaining)))
++    }
++    let is_dir = |path: &Path| std::fs::symlink_metadata(path).is_ok_and(|m| m.is_dir() && plain(&m));
++    // A direct caller must name one app directory, just like the bulk scan.
++    if app_id.starts_with('.') || Path::new(app_id).components().count() != 1
++        || !matches!(Path::new(app_id).components().next(), Some(std::path::Component::Normal(_)))
++    {
++        return Ok(());
++    }
+     let legacy = app_data_root.join(app_id);
+-    let (bundle, previous, next) = (legacy.join("bundle"), legacy.join(".bundle-previous"), legacy.join(".bundle-next"));
+-    let is_dir = |path: &Path| std::fs::symlink_metadata(path).is_ok_and(|m| m.is_dir());
+-    let remove = |path: &Path| match std::fs::symlink_metadata(path) {
+-        Ok(m) if m.is_dir() => std::fs::remove_dir_all(path),
+-        Ok(_) => std::fs::remove_file(path),
+-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+-        Err(e) => Err(e),
+-    };
++    if !is_dir(app_data_root) || !is_dir(&legacy) {
++        return Ok(());
++    }
++    let installs = app_data_root.join(INSTALLS_DIR);
++    let modern = install_root(app_data_root, app_id);
+     let fail = |what: &str, e: std::io::Error| format!("cannot move {app_id}'s install out of its storage ({what}): {e}");
+-    remove(&next).map_err(|e| fail("an interrupted download", e))?;
+-    if is_dir(&previous) && !is_dir(&bundle) {
+-        remove(&bundle).map_err(|e| fail("a stray entry", e))?;
+-        std::fs::rename(&previous, &bundle).map_err(|e| fail("the last complete bundle", e))?;
++    let is_empty = |path: &Path| is_dir(path) && std::fs::read_dir(path).is_ok_and(|mut entries| entries.next().is_none());
++    match std::fs::symlink_metadata(&installs) {
++        Ok(metadata) if !metadata.is_dir() || !plain(&metadata) => return Ok(()),
++        Err(e) if e.kind() != std::io::ErrorKind::NotFound => return Err(fail("its new place", e)),
++        _ => {}
++    }
++    let modern_was_empty = match std::fs::symlink_metadata(&modern) {
++        Ok(metadata) if metadata.is_dir() && plain(&metadata) && is_empty(&modern) => true,
++        Ok(_) => return Ok(()),
++        Err(e) if e.kind() == std::io::ErrorKind::NotFound => false,
++        Err(e) => return Err(fail("its new place", e)),
++    };
++    let (bundle, previous) = (legacy.join("bundle"), legacy.join(".bundle-previous"));
++    let matches = |path: &Path| {
++        if !is_dir(path) || !plain_tree(path, 0, &mut (crate::admission::MAX_ENTRIES + 1))
++            || crate::admission::inventory(path).is_err()
++        {
++            return false;
++        }
++        let Ok(text) = crate::admission::read_text(&path.join(octosense_app_policy::MANIFEST_FILE), crate::admission::MAX_MANIFEST_BYTES)
++            else { return false };
++        let Ok(manifest) = octosense_app_policy::AppManifest::parse(&text) else { return false };
++        manifest.id == app_id && digest_dir(path).is_ok_and(|digest| digest.eq_ignore_ascii_case(&manifest.integrity.bundle_blake3))
++    };
++    let source = if matches(&bundle) {
++        &bundle
++    } else if matches(&previous) {
++        &previous
+     } else {
+-        remove(&previous).map_err(|e| fail("a previous bundle", e))?;
+-    }
+-    if !is_dir(&bundle) {
+-        return remove(&bundle).map_err(|e| fail("a stray entry", e));
+-    }
+-    let target = installed_bundle_dir(app_data_root, app_id);
+-    if std::fs::symlink_metadata(&target).is_ok() {
+-        return remove(&bundle).map_err(|e| fail("a stale copy", e));
++        // A next bundle was never published. With no complete installation
++        // identified, all three names may be ordinary app data.
++        return Ok(());
++    };
++    std::fs::create_dir_all(&installs).map_err(|e| fail("its new place", e))?;
++    let created_modern = match std::fs::create_dir(&modern) {
++        Ok(()) => true,
++        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists && modern_was_empty && is_empty(&modern) => false,
++        Err(e) => return Err(fail("its new place", e)),
++    };
++    if let Err(e) = std::fs::rename(source, installed_bundle_dir(app_data_root, app_id)) {
++        // A failed move leaves no modern install that would block a retry.
++        if created_modern {
++            let _ = std::fs::remove_dir(&modern);
++        }
++        return Err(fail("the bundle", e));
+     }
+-    std::fs::create_dir_all(install_root(app_data_root, app_id)).map_err(|e| fail("its new place", e))?;
+-    std::fs::rename(&bundle, &target).map_err(|e| fail("the bundle", e))
++    // Sibling paths still belong to the app's storage. Even an intact old
++    // update copy need not be deleted to recover this installation.
++    Ok(())
+ }
+ 
+ /// Days from a catalog's `published` date (ISO 8601, date part) to `today`.
+diff --git a/crates/app-hub/tests/install_layout.rs b/crates/app-hub/tests/install_layout.rs
+index 9ada44b..1b413f4 100644
+--- a/crates/app-hub/tests/install_layout.rs
++++ b/crates/app-hub/tests/install_layout.rs
+@@ -87,7 +87,8 @@ fn a_legacy_interrupted_update_is_settled_as_it_moves() {
+     fs::write(legacy.join(".bundle-next/partial.txt"), "half a download").unwrap();
+     adopt_legacy_installs(&d.root).unwrap();
+     assert!(d.store.may_run("example-app").is_ok(), "the last complete bundle is restored");
+-    assert!(!legacy.join(".bundle-previous").exists() && !legacy.join(".bundle-next").exists());
++    assert!(!legacy.join(".bundle-previous").exists());
++    assert_eq!(fs::read_to_string(legacy.join(".bundle-next/partial.txt")).unwrap(), "half a download");
+ }
+ 
+ #[test]
+@@ -96,11 +97,274 @@ fn a_moved_install_does_not_replace_a_newer_one() {
+     let d = Device::new();
+     d.install();
+     let legacy = d.root.join("example-app/bundle");
+-    fs::create_dir_all(&legacy).unwrap();
+-    fs::write(legacy.join("manifest.json"), "{}").unwrap();
++    copy_dir(&d.fixture.bundle, &legacy);
+     adopt_legacy_installs(&d.root).unwrap();
+     assert!(d.store.may_run("example-app").is_ok());
+-    assert!(!legacy.exists(), "the stale copy does not stay in the app's storage");
++    assert_eq!(fs::read(legacy.join("manifest.json")).unwrap(), fs::read(d.fixture.bundle.join("manifest.json")).unwrap());
++}
++
++#[test]
++fn migration_preserves_app_data_named_bundle_when_a_new_install_exists() {
++    let d = Device::new();
++    d.install();
++    let data = d.root.join("example-app/bundle");
++    fs::create_dir_all(&data).unwrap();
++    fs::write(data.join("notes.txt"), "user data").unwrap();
++
++    adopt_legacy_installs(&d.root).unwrap();
++
++    assert_eq!(fs::read_to_string(data.join("notes.txt")).unwrap(), "user data");
++}
++
++#[test]
++fn migration_preserves_app_data_named_after_update_directories() {
++    let d = Device::new();
++    d.install();
++    for name in [".bundle-previous", ".bundle-next"] {
++        let data = d.root.join("example-app").join(name);
++        fs::create_dir_all(&data).unwrap();
++        fs::write(data.join("notes.txt"), "user data").unwrap();
++    }
++
++    adopt_legacy_installs(&d.root).unwrap();
++
++    for name in [".bundle-previous", ".bundle-next"] {
++        assert_eq!(fs::read_to_string(d.root.join("example-app").join(name).join("notes.txt")).unwrap(), "user data");
++    }
++}
++
++#[test]
++fn an_interrupted_modern_install_preserves_all_legacy_paths() {
++    let d = Device::new();
++    copy_dir(&d.fixture.bundle, &install_root(&d.root, "example-app").join(".bundle-previous"));
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        copy_dir(&d.fixture.bundle, &d.root.join("example-app").join(name));
++    }
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(!d.store.install_dir("example-app").exists());
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        assert!(d.root.join("example-app").join(name).join("manifest.json").is_file());
++    }
++}
++
++#[test]
++fn an_empty_modern_directory_does_not_block_a_legacy_migration_retry() {
++    let d = Device::new();
++    let legacy = d.root.join("example-app/bundle");
++    copy_dir(&d.fixture.bundle, &legacy);
++    fs::create_dir_all(install_root(&d.root, "example-app")).unwrap();
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(d.store.may_run("example-app").is_ok(), "a move interrupted before its rename can be retried");
++    assert!(!legacy.exists());
++}
++
++#[test]
++fn ordinary_data_directories_are_not_legacy_installs() {
++    let d = Device::new();
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        let data = d.root.join("example-app").join(name);
++        fs::create_dir_all(&data).unwrap();
++        fs::write(data.join("manifest.json"), "{}").unwrap();
++        fs::write(data.join("notes.txt"), "user data").unwrap();
++    }
++
++    adopt_legacy_installs(&d.root).unwrap();
++    adopt_legacy_installs(&d.root).unwrap();
++
++    assert!(!install_root(&d.root, "example-app").exists());
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        assert_eq!(fs::read_to_string(d.root.join("example-app").join(name).join("notes.txt")).unwrap(), "user data");
++    }
++}
++
++#[test]
++fn ordinary_data_files_are_not_legacy_installs() {
++    let d = Device::new();
++    fs::create_dir_all(d.root.join("example-app")).unwrap();
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        fs::write(d.root.join("example-app").join(name), "user data").unwrap();
++    }
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(!install_root(&d.root, "example-app").exists());
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        assert_eq!(fs::read_to_string(d.root.join("example-app").join(name)).unwrap(), "user data");
++    }
++}
++
++#[test]
++fn a_legacy_manifest_must_match_its_app_directory() {
++    let d = Device::new();
++    let legacy = d.root.join("another-app/bundle");
++    copy_dir(&d.fixture.bundle, &legacy);
++
++    adopt_legacy_installs(&d.root).unwrap();
++
++    assert!(legacy.join("manifest.json").is_file());
++    assert!(!install_root(&d.root, "another-app").exists());
++}
++
++#[test]
++fn a_legacy_manifest_must_match_its_bundle_bytes() {
++    let d = Device::new();
++    let legacy = d.root.join("example-app/bundle");
++    copy_dir(&d.fixture.bundle, &legacy);
++    fs::write(legacy.join("notes.txt"), "user data added after installation").unwrap();
++
++    adopt_legacy_installs(&d.root).unwrap();
++
++    assert!(legacy.join("manifest.json").is_file());
++    assert_eq!(fs::read_to_string(legacy.join("notes.txt")).unwrap(), "user data added after installation");
++    assert!(!install_root(&d.root, "example-app").exists());
++}
++
++#[test]
++fn recovery_preserves_user_data_at_the_old_bundle_path() {
++    let d = Device::new();
++    let legacy = d.root.join("example-app");
++    copy_dir(&d.fixture.bundle, &legacy.join(".bundle-previous"));
++    fs::create_dir_all(legacy.join("bundle")).unwrap();
++    fs::write(legacy.join("bundle/notes.txt"), "user data").unwrap();
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(d.store.may_run("example-app").is_ok(), "the verified previous bundle is restored");
++    assert_eq!(fs::read_to_string(legacy.join("bundle/notes.txt")).unwrap(), "user data");
++}
++
++#[test]
++fn migrating_a_bundle_preserves_unknown_update_data() {
++    let d = Device::new();
++    let legacy = d.root.join("example-app");
++    copy_dir(&d.fixture.bundle, &legacy.join("bundle"));
++    for name in [".bundle-previous", ".bundle-next"] {
++        fs::create_dir_all(legacy.join(name)).unwrap();
++        fs::write(legacy.join(name).join("notes.txt"), "user data").unwrap();
++    }
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(d.store.may_run("example-app").is_ok());
++    for name in [".bundle-previous", ".bundle-next"] {
++        assert_eq!(fs::read_to_string(legacy.join(name).join("notes.txt")).unwrap(), "user data");
++    }
++}
++
++#[test]
++fn an_unpublished_next_bundle_is_not_adopted() {
++    let d = Device::new();
++    let next = d.root.join("example-app/.bundle-next");
++    copy_dir(&d.fixture.bundle, &next);
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(next.join("manifest.json").is_file());
++    assert!(!install_root(&d.root, "example-app").exists());
++}
++
++#[test]
++fn completed_legacy_updates_keep_the_published_bundle() {
++    let d = Device::new();
++    let legacy = d.root.join("example-app");
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        copy_dir(&d.fixture.bundle, &legacy.join(name));
++    }
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(d.store.may_run("example-app").is_ok());
++    assert!(!legacy.join("bundle").exists());
++    for name in [".bundle-previous", ".bundle-next"] {
++        assert!(legacy.join(name).join("manifest.json").is_file());
++    }
++}
++
++#[cfg(any(unix, windows))]
++fn link_directory(from: &Path, to: &Path) {
++    #[cfg(unix)]
++    std::os::unix::fs::symlink(from, to).unwrap();
++    #[cfg(windows)]
++    {
++        use std::os::windows::process::CommandExt;
++        let output = std::process::Command::new("cmd.exe")
++            .args(["/C", "mklink", "/J"])
++            .arg(to)
++            .arg(from)
++            .creation_flags(0x08000000)
++            .output().unwrap();
++        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
++    }
++}
++
++#[cfg(any(unix, windows))]
++#[test]
++fn migration_does_not_follow_an_app_directory_link() {
++    let d = Device::new();
++    let outside = d.fixture.root.join("outside");
++    copy_dir(&d.fixture.bundle, &outside.join("bundle"));
++    fs::create_dir_all(&d.root).unwrap();
++    link_directory(&outside, &d.root.join("example-app"));
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++    adopt_legacy_installs(&d.root).unwrap();
++
++    assert!(outside.join("bundle/manifest.json").is_file());
++    assert!(!install_root(&d.root, "example-app").exists());
++}
++
++#[cfg(any(unix, windows))]
++#[test]
++fn migration_does_not_follow_the_installs_directory_link() {
++    let d = Device::new();
++    let outside = d.fixture.root.join("outside");
++    fs::create_dir(&outside).unwrap();
++    let legacy = d.root.join("example-app/bundle");
++    copy_dir(&d.fixture.bundle, &legacy);
++    link_directory(&outside, &d.root.join(INSTALLS_DIR));
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(legacy.join("manifest.json").is_file());
++    assert!(!outside.join("example-app").exists());
++}
++
++#[cfg(any(unix, windows))]
++#[test]
++fn migration_preserves_links_at_legacy_bundle_paths() {
++    let d = Device::new();
++    let legacy = d.root.join("example-app");
++    fs::create_dir_all(&legacy).unwrap();
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        link_directory(&d.fixture.bundle, &legacy.join(name));
++    }
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(!install_root(&d.root, "example-app").exists());
++    for name in ["bundle", ".bundle-previous", ".bundle-next"] {
++        assert!(fs::symlink_metadata(legacy.join(name)).is_ok());
++    }
++    assert!(d.fixture.bundle.join("manifest.json").is_file());
++}
++
++#[cfg(unix)]
++#[test]
++fn a_linked_manifest_does_not_identify_a_legacy_install() {
++    let d = Device::new();
++    let legacy = d.root.join("example-app/bundle");
++    copy_dir(&d.fixture.bundle, &legacy);
++    fs::remove_file(legacy.join("manifest.json")).unwrap();
++    std::os::unix::fs::symlink(d.fixture.bundle.join("manifest.json"), legacy.join("manifest.json")).unwrap();
++
++    adopt_legacy_install(&d.root, "example-app").unwrap();
++
++    assert!(legacy.join("main.splash").is_file());
++    assert!(!install_root(&d.root, "example-app").exists());
+ }
+ 
+ #[test]
+diff --git a/crates/appstore/src/lib.rs b/crates/appstore/src/lib.rs
+index 3959524..a487615 100644
+--- a/crates/appstore/src/lib.rs
++++ b/crates/appstore/src/lib.rs
+@@ -742,9 +742,10 @@ mod installed_apps_tests {
+ 
+     fn manifest(dir: &std::path::Path, id: &str) {
+         std::fs::create_dir_all(dir).unwrap();
++        let digest = octosense_app_policy::digest_dir(dir).unwrap();
+         std::fs::write(
+             dir.join(octosense_app_policy::MANIFEST_FILE),
+-            serde_json::json!({"schema": 1, "id": id, "version": "1.0.0", "name": id, "integrity": {"bundle_blake3": ""}}).to_string(),
++            serde_json::json!({"schema": 1, "id": id, "version": "1.0.0", "name": id, "integrity": {"bundle_blake3": digest}}).to_string(),
+         )
+         .unwrap();
+     }

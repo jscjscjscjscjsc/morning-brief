@@ -1,0 +1,3 @@
+Command: git -c core.autocrlf=false -c core.eol=lf -C E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\OctoSense-App-Hub archive --format=zip --output=C:\Windows\Temp\hub-migration-portable-final\hub-migration-0ybp4td2\source.zip 386359153ed6377b5f047bd9ed2767a6a2ac2bc7
+Exit code: 0
+

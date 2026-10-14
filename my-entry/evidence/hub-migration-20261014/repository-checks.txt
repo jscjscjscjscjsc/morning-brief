@@ -1,0 +1,21 @@
+Command: python -X utf8 tools/brace.py
+Exit code: 0
+文件：E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\my-entry\morning-brief\bundle\main.splash
+总行数：11688
+字符串在文末仍未闭合：False
+未闭合的括号：无
+异常：无
+[PASS] 语法体检通过
+
+Command: python -X utf8 tools/audit_widgets.py
+Exit code: 0
+文件：E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\my-entry\morning-brief\bundle\main.splash
+控件定义 302 个 / ui. 引用 277 个
+[PASS] 没有引用缺失的控件
+
+Command: python -X utf8 tools/audit_globals.py
+Exit code: 0
+文件：E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\my-entry\morning-brief\bundle\main.splash
+顶层全局 368 个 / 函数 591 个 / 控件定义 302 个
+[PASS] 没有发现未声明的状态变量
+

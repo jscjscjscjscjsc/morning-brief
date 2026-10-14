@@ -1,0 +1,21 @@
+Baseline: 386359153ed6377b5f047bd9ed2767a6a2ac2bc7
+client.rs SHA-256: e3f02ab646eafea6dd2764dade813ed266f82c17bb3b1d384ba1eb492a720b45
+Extracted functions SHA-256: c8a54445cd35ef3aa3d1e9654b3e55882e4dbbfda3597f1c3b0c8a11e2658f74
+Command: baseline_migration.exe --nocapture
+Exit code: 101
+
+
+running 1 test
+
+thread 'tests::migration_preserves_app_data_named_bundle_when_a_new_install_exists' (31128) panicked at build\hub-migration-20261014\baseline_migration.rs:88:96:
+called `Result::unwrap()` on an `Err` value: Os { code: 3, kind: NotFound, message: "系统找不到指定的路径。" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test tests::migration_preserves_app_data_named_bundle_when_a_new_install_exists ... FAILED
+
+failures:
+
+failures:
+    tests::migration_preserves_app_data_named_bundle_when_a_new_install_exists
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

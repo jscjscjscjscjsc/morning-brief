@@ -1,6 +1,6 @@
 # AGENTS.md — 给接手的 AI Agent 的入口
 
-> 你（AI agent）打开这个仓库时，请先读完本文件，再看 `进度交接_第45轮后.md`。
+> 你（AI agent）打开这个仓库时，请先读完本文件，再看最新生态修复交接 `进度交接_第47轮后.md`；应用功能与实机流程见 `进度交接_第45轮后.md`。
 > 这一个文件讲清：这是什么项目、现在到哪一步、怎么跑起来、什么不能碰、下一步做什么。
 >
 > **接力任务（GitHub Issue #1）**：https://github.com/jscjscjscjscjsc/morning-brief/issues/1
