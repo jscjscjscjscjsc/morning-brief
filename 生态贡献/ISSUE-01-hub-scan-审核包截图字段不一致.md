@@ -1,10 +1,22 @@
-# ISSUE-01 · `hub scan` 的审核包里，截图字段和 listing 里的截图对不上
+# ISSUE-01 · `hub scan` 截图字段差异的历史记录（缺陷归因已撤回）
 
 **上报对象**：`hub`（OctoSense-App-Hub / `crates/app-hub`）
 **核实时的 app-hub 提交**：`a15580cbdcc734bd6387ad89f43e371a5155c321`
 **核实时的 hub 二进制**：本机自建 `hub`（`hub --help` 列出的子命令：`keygen / pubkey / certify / stamp / sign-manifest / check / publish / withdraw / remove / scan / verify`）
-**严重度**：中（不影响出包，影响**审阅方与自动化审阅**读到的信息）
-**状态**：未修复，本轮已按现状绕过并留存证据
+**原报告严重度**：中；2026-10-14 复核后不再据此认定上游缺陷
+**当前状态**：已撤回「两个截图字段必须一致」的归因；不计入 2026-10-14 本轮修复成果
+
+## 2026-10-14 复核说明（当前结论）
+
+复核对象为 App Hub `386359153ed6377b5f047bd9ed2767a6a2ac2bc7` 的源码与文档。两个字段的语义不同：
+
+- [`crates/app-hub/src/scan.rs`](https://github.com/OctoSense-org/OctoSense-App-Hub/blob/386359153ed6377b5f047bd9ed2767a6a2ac2bc7/crates/app-hub/src/scan.rs#L52) 对顶层 `Packet.screenshots` 的注释是 “Paths to screenshots, when the caller rendered any.”；`packet()` 在第 146 行将它初始化为 `Vec::new()`，没有把 listing 的资源路径当作调用方渲染结果。
+- [`crates/app-policy/src/listing.rs`](https://github.com/OctoSense-org/OctoSense-App-Hub/blob/386359153ed6377b5f047bd9ed2767a6a2ac2bc7/crates/app-policy/src/listing.rs#L46) 将 `Listing.screenshots` 定义为随包、按展示顺序排列的截图路径。
+- [`docs/SUBMITTING.md`](https://github.com/OctoSense-org/OctoSense-App-Hub/blob/386359153ed6377b5f047bd9ed2767a6a2ac2bc7/docs/SUBMITTING.md#L451) 明确说明：“The `hub scan` packet carries no screenshots. Reviewers see them in the bundle”；[`docs/PUBLISHING.md`](https://github.com/OctoSense-org/OctoSense-App-Hub/blob/386359153ed6377b5f047bd9ed2767a6a2ac2bc7/docs/PUBLISHING.md#L1648) 也写明审核包不携带截图。
+
+因此，顶层为空、`listing.screenshots` 非空这一历史输出本身不能证明截图丢失或字段不一致。撤回下文「两者本来就是同一事实」、复制字段、删除字段及强制一致性断言的修复建议。消费方应按字段契约读取发布方截图，并打开 bundle 中的实际文件；本轮没有为此修改上游代码。
+
+本次只核对源码和文档，未编译或运行 Rust `hub` / `card-host`，也没有重跑历史 `hub scan` 命令。以下保留原报告的输出和当时推断，供追溯；其中缺陷判断与修复建议已由本节更正，不能作为当前结论或本轮修复证据。
 
 ---
 

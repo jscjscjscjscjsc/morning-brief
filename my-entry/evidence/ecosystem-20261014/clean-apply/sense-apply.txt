@@ -1,0 +1,2 @@
+Command: git apply <WORKSPACE>\my-entry\patches\octosense-setup-worktree-windows.patch
+Exit code: 0

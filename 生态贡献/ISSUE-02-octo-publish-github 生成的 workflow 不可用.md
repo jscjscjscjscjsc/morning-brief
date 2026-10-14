@@ -1,9 +1,22 @@
-# ISSUE-02 · `octo publish-github` 生成的发布 workflow，用了 `hub` 里不存在的子命令
+# ISSUE-02 · 历史发布 workflow 与旧 `hub` 不兼容（上游已实现发布子命令）
 
 **上报对象**：`octo`（OctoScript 工具链，生成器 `publish-github`）+ 与 `hub` 的接口约定
 **核实时的 app-hub 提交**：`a15580cbdcc734bd6387ad89f43e371a5155c321`
-**严重度**：**高**（会在**打 tag 的瞬间**触发一条必然失败的发布流水线，而 `PUBLISHING.md` 又要求公开发布必须打 tag）
-**状态**：未修复，本轮已按要求**不提交**该 workflow 并留存证据
+**原报告严重度**：高；描述的是当时工具链与旧二进制的组合
+**当前状态**：旧 `publisher-*` 缺失问题已由上游实现解决；不计入 2026-10-14 本轮修复成果。当前嵌套应用目录问题单列 [ISSUE-06](ISSUE-06-publish-github-嵌套目录假成功.md)
+
+## 2026-10-14 复核说明（当前结论）
+
+本轮读取 App Flow `d0344682df7c52ae5a79055f20f148f542d115e0`，以及其 [`tools/publisher-toolchain.json`](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/d0344682df7c52ae5a79055f20f148f542d115e0/tools/publisher-toolchain.json) 固定的 App Hub `386359153ed6377b5f047bd9ed2767a6a2ac2bc7`。不能继续用旧机器 `hub --help` 的输出判断当前发布能力。
+
+1. App Hub 的 [`crates/app-hub/src/bin/hub.rs`](https://github.com/OctoSense-org/OctoSense-App-Hub/blob/386359153ed6377b5f047bd9ed2767a6a2ac2bc7/crates/app-hub/src/bin/hub.rs#L52) 已分派 `publisher-prepare`、`publisher-attach`、`publisher-verify`、`publisher-pack`；实现位于同仓库 `publisher_tools` 模块。旧报告的「四个子命令不存在」不适用于这个版本。
+2. App Flow 当前 [`tools/publish-app.template.yml`](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/d0344682df7c52ae5a79055f20f148f542d115e0/tools/publish-app.template.yml#L217) 使用这些真实子命令，检出应用到 `app/`，处理 `app/bundle`。当前官方发布方式需要提交审核过的 workflow；下文「不要生成或提交 workflow」的历史建议已失效。
+3. 原报告把命令里的 `app/my-entry/morning-brief/bundle` 再加一次检出目录、推导出 `app/app/...`，这一归因也撤回。该命令本已包含一次 `app/` 前缀，不能仅凭 `actions/checkout` 的 `path: app` 推断重复前缀。
+4. 本轮另外复现了当前生成器的嵌套目录问题：传晨报卡仓库根时因缺少根目录 `bundle/manifest.json` 而拒绝；传 `my-entry/morning-brief` 时则把 workflow 目标放在嵌套 `.github/workflows/`，模板仍假设仓库根有 `bundle/`。其复现、补丁与回归测试见 [ISSUE-06](ISSUE-06-publish-github-嵌套目录假成功.md)，与旧二进制缺命令分开记录。
+
+验证边界：在改动前版本运行 `python -B -m unittest discover -s tools -p test_github_publish.py -v`，9 个测试通过，Windows 不允许创建符号链接的 3 个子例跳过；该结果不覆盖嵌套目录，也不证明真实 GitHub 发布完成。本轮未编译或运行 Rust 宿主、未创建 release/tag、未执行 GitHub 发布 workflow。
+
+以下保留原报告的历史输出与建议，供追溯；当前状态以本节为准，不能将上游已经实现的发布能力算作本轮贡献。
 
 ---
 

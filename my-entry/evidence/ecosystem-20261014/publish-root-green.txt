@@ -1,0 +1,25 @@
+Command: python -X utf8 -m unittest discover -s tools -p test_github_publish.py -v
+Exit code: 0
+test_app_with_own_git_repository_remains_publishable (test_github_publish.PublishingSetup.test_app_with_own_git_repository_remains_publishable) ... ok
+test_custom_workflow_needs_explicit_replacement (test_github_publish.PublishingSetup.test_custom_workflow_needs_explicit_replacement) ... ok
+test_github_metadata_never_gets_restamped_or_unsigned_escape (test_github_publish.PublishingSetup.test_github_metadata_never_gets_restamped_or_unsigned_escape) ... ok
+test_installer_is_idempotent_and_does_not_publish (test_github_publish.PublishingSetup.test_installer_is_idempotent_and_does_not_publish) ... ok
+test_linked_worktree_root_remains_publishable (test_github_publish.PublishingSetup.test_linked_worktree_root_remains_publishable) ... ok
+test_nested_app_in_linked_worktree_is_rejected (test_github_publish.PublishingSetup.test_nested_app_in_linked_worktree_is_rejected) ... ok
+test_nested_app_is_rejected_before_workflow_writes (test_github_publish.PublishingSetup.test_nested_app_is_rejected_before_workflow_writes) ... ok
+test_new_nested_app_is_rejected_before_destination_creation (test_github_publish.PublishingSetup.test_new_nested_app_is_rejected_before_destination_creation) ... ok
+test_new_standalone_app_remains_supported (test_github_publish.PublishingSetup.test_new_standalone_app_remains_supported) ... ok
+test_release_receipt_does_not_invent_submission_status (test_github_publish.PublishingSetup.test_release_receipt_does_not_invent_submission_status) ... ok
+test_run_refuses_sealed_releases_before_startup_or_file_writes (test_github_publish.PublishingSetup.test_run_refuses_sealed_releases_before_startup_or_file_writes) ... ok
+test_sealed_bundle_is_not_used_as_editable_repository (test_github_publish.PublishingSetup.test_sealed_bundle_is_not_used_as_editable_repository) ... ok
+test_symlinks_cannot_redirect_workflow_writes (test_github_publish.PublishingSetup.test_symlinks_cannot_redirect_workflow_writes) ...
+  test_symlinks_cannot_redirect_workflow_writes (test_github_publish.PublishingSetup.test_symlinks_cannot_redirect_workflow_writes) (component='.github') ... skipped "Symlink creation unavailable: [WinError 1314] 客户端没有所需的特权。: '<TEMP>\\\\tmpk8wnw8r4\\\\outside' -> '<TEMP>\\\\tmpk8wnw8r4\\\\app\\\\.github'"
+  test_symlinks_cannot_redirect_workflow_writes (test_github_publish.PublishingSetup.test_symlinks_cannot_redirect_workflow_writes) (component='.github/workflows') ... skipped "Symlink creation unavailable: [WinError 1314] 客户端没有所需的特权。: '<TEMP>\\\\tmp2z5ph17b\\\\outside' -> '<TEMP>\\\\tmp2z5ph17b\\\\app\\\\.github\\\\workflows'"
+  test_symlinks_cannot_redirect_workflow_writes (test_github_publish.PublishingSetup.test_symlinks_cannot_redirect_workflow_writes) (component='.github/workflows/publish-app.yml') ... skipped "Symlink creation unavailable: [WinError 1314] 客户端没有所需的特权。: '<TEMP>\\\\tmpux1614s5\\\\outside' -> '<TEMP>\\\\tmpux1614s5\\\\app\\\\.github\\\\workflows\\\\publish-app.yml'"
+test_toolchain_ref_cannot_be_mutable_or_inject_workflow (test_github_publish.PublishingSetup.test_toolchain_ref_cannot_be_mutable_or_inject_workflow) ... ok
+test_typed_unsigned_null_signature_remains_authorable (test_github_publish.PublishingSetup.test_typed_unsigned_null_signature_remains_authorable) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.888s
+
+OK (skipped=3)

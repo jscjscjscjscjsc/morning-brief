@@ -1,0 +1,7 @@
+Exit code: 0
+文件：<WORKSPACE>\my-entry\morning-brief\bundle\main.splash
+总行数：11688
+字符串在文末仍未闭合：False
+未闭合的括号：无
+异常：无
+[PASS] 语法体检通过

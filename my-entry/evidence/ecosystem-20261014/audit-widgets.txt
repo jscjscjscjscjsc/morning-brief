@@ -1,0 +1,4 @@
+Exit code: 0
+文件：<WORKSPACE>\my-entry\morning-brief\bundle\main.splash
+控件定义 302 个 / ui. 引用 277 个
+[PASS] 没有引用缺失的控件

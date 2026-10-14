@@ -1,0 +1,33 @@
+Nested system-app creation regression before compatibility fix
+Command (cwd: morning-brief/OctoScript-App-Design-Flow): python -X utf8 -m unittest -v tools.test_github_publish.PublishingSetup.test_new_nested_system_app_remains_supported
+Exit code: 1
+
+test_new_nested_system_app_remains_supported (tools.test_github_publish.PublishingSetup.test_new_nested_system_app_remains_supported) ... octo: GitHub publishing template only supports bundle/ at the repository root; <TEMP>\tmpyfhgpmk4\apps\system-fixture is nested in <TEMP>\tmpyfhgpmk4. GitHub only runs workflows in <TEMP>\tmpyfhgpmk4\.github\workflows. For a nested app, manually review and configure a workflow there with the correct bundle/component paths.
+ERROR
+
+======================================================================
+ERROR: test_new_nested_system_app_remains_supported (tools.test_github_publish.PublishingSetup.test_new_nested_system_app_remains_supported)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoScript-App-Design-Flow\tools\octo", line 283, in cmd_new
+    validate_publisher_root(dest)
+  File "<WORKSPACE>\OctoScript-App-Design-Flow\tools\octo", line 97, in validate_publisher_root
+    raise ValueError(
+ValueError: GitHub publishing template only supports bundle/ at the repository root; <TEMP>\tmpyfhgpmk4\apps\system-fixture is nested in <TEMP>\tmpyfhgpmk4. GitHub only runs workflows in <TEMP>\tmpyfhgpmk4\.github\workflows. For a nested app, manually review and configure a workflow there with the correct bundle/component paths.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoScript-App-Design-Flow\tools\test_github_publish.py", line 147, in test_new_nested_system_app_remains_supported
+    self.assertEqual(octo.cmd_new(args), 0)
+                     ^^^^^^^^^^^^^^^^^^
+  File "<WORKSPACE>\OctoScript-App-Design-Flow\tools\octo", line 286, in cmd_new
+    die(str(error))
+  File "<WORKSPACE>\OctoScript-App-Design-Flow\tools\octo", line 210, in die
+    sys.exit(code)
+SystemExit: 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.040s
+
+FAILED (errors=1)

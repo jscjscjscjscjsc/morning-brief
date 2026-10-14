@@ -1,0 +1,2 @@
+Command: git apply --check <WORKSPACE>\my-entry\patches\octo-publisher-root-utf8.patch
+Exit code: 0
