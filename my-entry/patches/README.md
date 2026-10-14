@@ -1,5 +1,20 @@
 # patches —— 对官方仓库的改动，以及我们对上游的回报
 
+## 第 46 轮：生态工具链修复（2026-10-14）
+
+本轮新增两个补丁，包含实际代码与回归测试。官方 checkout 被忽略，**保存到这里的 patch 才是主仓库交付物**。
+
+| 补丁 | 适用仓库与固定 commit | 修复 |
+| --- | --- | --- |
+| [octo-publisher-root-utf8.patch](octo-publisher-root-utf8.patch) | App Flow，`d0344682df7c52ae5a79055f20f148f542d115e0`（本地旧目录名 `OctoScript-App-Design-Flow`） | 嵌套发布假成功、Windows UTF-8/LF；保留系统应用创建兼容 |
+| [octosense-setup-worktree-windows.patch](octosense-setup-worktree-windows.patch) | OctoSense，`ffd5e4889a9a1f84fdc5213edefe64c36b4377a2` | Windows 丢失工作树恢复、中文 Git 路径解码 |
+
+在对应固定版本的干净源码根目录，分别执行 `git apply --check <补丁绝对路径>`，再 `git apply <补丁绝对路径>`。Windows 检出应配置 `core.autocrlf=false` 保持 LF；避免在已有修改上直接应用。
+
+一键离线复核：在本仓库根目录执行 `python -X utf8 tools/verify_ecosystem.py`。它导出固定提交的干净源码，检查和应用两个补丁，再运行回归；不改现有官方 checkout。[完整步骤、日志和限制](../evidence/ecosystem-20261014/README.md)。
+
+本轮没有改晨报卡 bundle，也未编译宿主；完整 setup 套件有 5 个原实现同样存在的 Windows 错误，详见 ISSUE-08。以下为此前轮次的宿主补丁档案，本轮不重复计入新增成果。
+
 本目录有三类东西，别混着看：
 
 | 文件 | 是什么 | 现在的状态 |

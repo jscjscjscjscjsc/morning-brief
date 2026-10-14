@@ -1,0 +1,85 @@
+diff --git a/tools/setup.py b/tools/setup.py
+index d1da298..b9ab327 100644
+--- a/tools/setup.py
++++ b/tools/setup.py
+@@ -62,7 +62,7 @@ SINGLE_SOURCE = {"octos-core": "octos", "octos-cli": "octos", "octosense-appstor
+ 
+ 
+ def git(path, *args, check=True):
+-    result = subprocess.run(["git", "-C", str(path), *args], capture_output=True, text=True)
++    result = subprocess.run(["git", "-C", str(path), *args], capture_output=True, text=True, encoding="utf-8")
+     if check and result.returncode:
+         raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+     return result
+@@ -152,8 +152,11 @@ def add_worktree(hub, path, name, revision, args):
+     fetch_revision(hub, name, revision, args, is_shallow(hub))
+     # A checkout deleted without `git worktree remove` leaves a stale entry
+     # that blocks adding the same path again.
+-    listed = git(hub, "worktree", "list", "--porcelain").stdout.splitlines()
+-    if f"worktree {path.resolve()}" in listed or f"worktree {path}" in listed:
++    # NUL records keep paths unquoted; Path also normalizes Git's forward
++    # slashes on Windows before comparing them with the requested path.
++    listed = git(hub, "worktree", "list", "--porcelain", "-z").stdout.split("\0")
++    if any(Path(record[len("worktree "):]).resolve() == path.resolve()
++           for record in listed if record.startswith("worktree ")):
+         git(hub, "worktree", "prune")
+     path.parent.mkdir(parents=True, exist_ok=True)
+     git(hub, "worktree", "add", "--quiet", "--detach", str(path), revision)
+diff --git a/tools/test_setup.py b/tools/test_setup.py
+index 8c7cc89..4235619 100644
+--- a/tools/test_setup.py
++++ b/tools/test_setup.py
+@@ -6,7 +6,9 @@ import io
+ import json
+ import os
+ from pathlib import Path
++import shutil
+ import subprocess
++import sys
+ import tempfile
+ import unittest
+ from unittest.mock import patch
+@@ -236,10 +238,42 @@ class HubWorktrees(unittest.TestCase):
+     def test_a_stale_registration_does_not_block_adding_again(self):
+         self.args.hub = str(self.hubs)
+         self.prepare()
+-        subprocess.check_call(["rm", "-rf", str(self.path)])
++        shutil.rmtree(self.path)
+         self.prepare()
+         self.assert_worktree_of_hub(self.commits[0])
+ 
++    def test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again(self):
++        self.root = self.product_dir / "sources 中文 with spaces"
++        self.path = self.root / "makepad"
++        self.args.hub = str(self.hubs)
++        self.prepare()
++        shutil.rmtree(self.path)
++        self.prepare()
++        self.assert_worktree_of_hub(self.commits[0])
++
++    def test_git_paths_are_utf8_when_python_utf8_mode_is_disabled(self):
++        self.root = self.product_dir / "sources 中文 with spaces"
++        self.path = self.root / "makepad"
++        self.args.hub = str(self.hubs)
++        self.prepare()
++        code = "\n".join([
++            "import importlib.util, json, sys",
++            "spec = importlib.util.spec_from_file_location('setup_native', sys.argv[1])",
++            "native = importlib.util.module_from_spec(spec)",
++            "spec.loader.exec_module(native)",
++            "result = native.git(sys.argv[2], 'rev-parse', '--show-toplevel')",
++            "print(json.dumps({'utf8_mode': sys.flags.utf8_mode, 'path': result.stdout.strip()}))",
++        ])
++        result = subprocess.run(
++            [sys.executable, "-B", "-X", "utf8=0", "-c", code, str(ROOT / "tools/setup.py"), str(self.path)],
++            capture_output=True, text=True, encoding="utf-8",
++            env={**os.environ, "PYTHONUTF8": "0"},
++        )
++        self.assertEqual(result.returncode, 0, result.stderr)
++        output = json.loads(result.stdout)
++        self.assertEqual(output["utf8_mode"], 0)
++        self.assertEqual(Path(output["path"]).resolve(), self.path.resolve())
++
+     def test_rejects_a_hub_of_another_repository(self):
+         run("-C", str(self.hub), "remote", "set-url", "origin", "https://example.invalid/other.git")
+         self.args.hub = str(self.hubs)

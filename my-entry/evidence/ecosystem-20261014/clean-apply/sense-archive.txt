@@ -1,0 +1,2 @@
+Command: git -C <WORKSPACE>\OctoSense archive --format=zip --output=<WORKSPACE>\build\ecosystem-verification\ecosystem-hfl86z3m\sense.zip ffd5e4889a9a1f84fdc5213edefe64c36b4377a2
+Exit code: 0

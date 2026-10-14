@@ -1,0 +1,13 @@
+OctoSense HEAD: ffd5e4889a9a1f84fdc5213edefe64c36b4377a2 plus tools/setup.py and tools/test_setup.py changes
+Platform: Windows; Python 3.12; Git 2.55.0.windows.3
+Command (cwd: morning-brief/OctoSense): python -X utf8 -m unittest -v tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again tools.test_setup.HubWorktrees.test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again tools.test_setup.HubWorktrees.test_git_paths_are_utf8_when_python_utf8_mode_is_disabled
+Exit code: 0
+
+test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again) ... ok
+test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again) ... ok
+test_git_paths_are_utf8_when_python_utf8_mode_is_disabled (tools.test_setup.HubWorktrees.test_git_paths_are_utf8_when_python_utf8_mode_is_disabled) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 4.427s
+
+OK

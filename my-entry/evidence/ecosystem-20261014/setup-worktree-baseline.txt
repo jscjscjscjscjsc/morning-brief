@@ -1,0 +1,146 @@
+Baseline setup.py implementation (HEAD ffd5e4889a9a1f84fdc5213edefe64c36b4377a2)
+Test file adds Windows-portable stale-registration regression and Chinese/spaces case.
+Command (cwd: morning-brief/OctoSense): python -X utf8 -m unittest -v tools.test_setup
+Exit code: 1
+
+test_a_missing_hub_is_an_error_not_a_clone (tools.test_setup.HubWorktrees.test_a_missing_hub_is_an_error_not_a_clone) ... ok
+test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again) ... ERROR
+test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again) ... ERROR
+test_applies_the_reviewed_patch_in_a_worktree (tools.test_setup.HubWorktrees.test_applies_the_reviewed_patch_in_a_worktree) ... ERROR
+test_check_creates_nothing (tools.test_setup.HubWorktrees.test_check_creates_nothing) ... ok
+test_conversion_preserves_local_work (tools.test_setup.HubWorktrees.test_conversion_preserves_local_work) ... ok
+test_fetches_a_new_pin_into_the_hub_without_making_it_shallow (tools.test_setup.HubWorktrees.test_fetches_a_new_pin_into_the_hub_without_making_it_shallow) ... ok
+test_hub_directory_from_the_environment (tools.test_setup.HubWorktrees.test_hub_directory_from_the_environment) ... ok
+test_per_source_environment_and_config_file (tools.test_setup.HubWorktrees.test_per_source_environment_and_config_file) ... ok
+test_rejects_a_hub_of_another_repository (tools.test_setup.HubWorktrees.test_rejects_a_hub_of_another_repository) ... ok
+test_remove_worktrees_keeps_local_work_and_clones (tools.test_setup.HubWorktrees.test_remove_worktrees_keeps_local_work_and_clones) ... ok
+test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request) ... ERROR
+test_update_moves_the_worktree (tools.test_setup.HubWorktrees.test_update_moves_the_worktree) ... ok
+test_without_a_hub_it_still_clones (tools.test_setup.HubWorktrees.test_without_a_hub_it_still_clones) ... ok
+test_applies_the_recorded_patch_and_check_is_read_only (tools.test_setup.RuntimeSources.test_applies_the_recorded_patch_and_check_is_read_only) ... ERROR
+test_check_requires_the_patch_without_applying_it (tools.test_setup.RuntimeSources.test_check_requires_the_patch_without_applying_it) ... ok
+test_preserves_unstaged_changes (tools.test_setup.RuntimeSources.test_preserves_unstaged_changes) ... ERROR
+test_rejects_additional_staged_changes (tools.test_setup.RuntimeSources.test_rejects_additional_staged_changes) ... ERROR
+test_rejects_modified_patch_bytes (tools.test_setup.RuntimeSources.test_rejects_modified_patch_bytes) ... ok
+
+======================================================================
+ERROR: test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 241, in test_a_stale_registration_does_not_block_adding_again
+    self.prepare()
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 248, in prepare_source
+    add_worktree(validate_hub(hub, name, spec), path, name, spec["revision"], args)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 159, in add_worktree
+    git(hub, "worktree", "add", "--quiet", "--detach", str(path), revision)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: fatal: '<TEMP>/tmp2zeonnj0/product/.sources/makepad' is a missing but already registered worktree;
+use 'add -f' to override, or 'prune' or 'remove' to clear
+
+======================================================================
+ERROR: test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 250, in test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again
+    self.prepare()
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 248, in prepare_source
+    add_worktree(validate_hub(hub, name, spec), path, name, spec["revision"], args)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 159, in add_worktree
+    git(hub, "worktree", "add", "--quiet", "--detach", str(path), revision)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: fatal: '<TEMP>/tmpju4m4q79/product/sources 中文 with spaces/makepad' is a missing but already registered worktree;
+use 'add -f' to override, or 'prune' or 'remove' to clear
+
+======================================================================
+ERROR: test_applies_the_reviewed_patch_in_a_worktree (tools.test_setup.HubWorktrees.test_applies_the_reviewed_patch_in_a_worktree)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 227, in test_applies_the_reviewed_patch_in_a_worktree
+    self.prepare(overlay)
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 292, in prepare_source
+    git(path, "apply", "--index", str(patch))
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: error: patch failed: policy.txt:1
+error: policy.txt: patch does not apply
+
+======================================================================
+ERROR: test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 272, in test_reports_an_existing_clone_and_converts_it_on_request
+    self.prepare()
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 254, in prepare_source
+    check_hub(root, name, spec, args, overlay)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 230, in check_hub
+    convert_clone(hub, path, name, overlay, args)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 210, in convert_clone
+    shutil.rmtree(aside)
+  File "C:\Users\su\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\su\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "C:\Users\su\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 5] 拒绝访问。: '<TEMP>\\tmpihsdnqnp\\product\\.sources\\.makepad.converting\\.git\\objects\\4b\\825dc642cb6eb9a060e54bf8d69288fbee4904'
+
+======================================================================
+ERROR: test_applies_the_recorded_patch_and_check_is_read_only (tools.test_setup.RuntimeSources.test_applies_the_recorded_patch_and_check_is_read_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 67, in test_applies_the_recorded_patch_and_check_is_read_only
+    self.prepare()
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 64, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, self.overlay)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 292, in prepare_source
+    git(path, "apply", "--index", str(patch))
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: error: patch failed: policy.txt:1
+error: policy.txt: patch does not apply
+
+======================================================================
+ERROR: test_preserves_unstaged_changes (tools.test_setup.RuntimeSources.test_preserves_unstaged_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 81, in test_preserves_unstaged_changes
+    self.prepare()
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 64, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, self.overlay)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 292, in prepare_source
+    git(path, "apply", "--index", str(patch))
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: error: patch failed: policy.txt:1
+error: policy.txt: patch does not apply
+
+======================================================================
+ERROR: test_rejects_additional_staged_changes (tools.test_setup.RuntimeSources.test_rejects_additional_staged_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 88, in test_rejects_additional_staged_changes
+    self.prepare()
+  File "<WORKSPACE>\OctoSense\tools\test_setup.py", line 64, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, self.overlay)
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 292, in prepare_source
+    git(path, "apply", "--index", str(patch))
+  File "<WORKSPACE>\OctoSense\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: error: patch failed: policy.txt:1
+error: policy.txt: patch does not apply
+
+----------------------------------------------------------------------
+Ran 19 tests in 23.642s
+
+FAILED (errors=7)

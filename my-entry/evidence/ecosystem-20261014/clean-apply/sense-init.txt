@@ -1,0 +1,2 @@
+Command: git init --quiet
+Exit code: 0

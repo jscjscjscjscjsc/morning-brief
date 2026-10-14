@@ -1,0 +1,2 @@
+Command: git -C <WORKSPACE>\OctoScript-App-Design-Flow archive --format=zip --output=<WORKSPACE>\build\ecosystem-verification\ecosystem-hfl86z3m\flow.zip d0344682df7c52ae5a79055f20f148f542d115e0
+Exit code: 0

@@ -1,63 +1,49 @@
-# 生态贡献 · 本轮（复赛）新增
+# 生态贡献 · 历史记录与 2026-10-14 复核
 
-这个目录记录本项目在「绕过上游缺陷」时**顺手回流给上游**的东西。规则来自比赛要求，也来自项目自己的复盘：**只绕过不报告，等于把问题留给下一个人。**
+这里记录晨报卡实际遇到的上游问题、复现证据与补丁。历史观察与当前结论分开保存：上游已解决的兼容问题、撤回的归因，以及此前轮次的补丁，都不重复计入本轮修复。
 
-每一条都尽量满足四个条件，方便维护者直接复核：
+本轮围绕晨报卡的发布和 Windows 开发流程复核。App Flow 基线为 `d0344682df7c52ae5a79055f20f148f542d115e0`；它固定的 App Hub 工具链为 `386359153ed6377b5f047bd9ed2767a6a2ac2bc7`。官方仓库未纳入本作品 Git 历史，源头修复以本仓库保存的补丁、复现脚本和各报告为准。
 
-1. **可复现**——给出命令行与原始输出，而不是描述；
-2. **可定位**——给出具体文件与代码片段（而不是「在某个地方」）；
-3. **可判断**——说清危害与影响面，以及为什么不能靠「读的人自己当心」解决；
-4. **可动手**——给按侵入性排序的修复建议，最好带上回归测试该测什么。
+## 2026-10-14 本轮问题
 
----
+| 编号 | 对象 | 复现的问题 | 状态与验证入口 |
+|---|---|---|---|
+| [ISSUE-06](ISSUE-06-publish-github-嵌套目录假成功.md) | App Flow `tools/octo` 发布流程 | 晨报卡应用在 `my-entry/morning-brief`；生成器将该目录当仓库根，写入 GitHub 不读取的嵌套 workflow 目录，并仍使用根目录 bundle 模板 | 已修复；发布回归 16 项 OK（3 个既有子用例 skip） |
+| [ISSUE-07](ISSUE-07-octo-Windows编码与行尾.md) | App Flow `tools/octo` | 文本 I/O 依赖 Windows 默认编码，写入时还可能转换行尾，影响 UTF-8 源码与 bundle 字节 | 已修复；4 项编码回归通过 |
+| [ISSUE-08](ISSUE-08-setup-Windows工作树恢复失败.md) | OctoSense `tools/setup.py` | 残留 worktree 注册识别失败，中文路径解码受默认编码影响 | 已修复；3 项目标回归通过，完整套件 5 个基线错误见报告 |
 
-## 复赛第二轮（2026-10-13）新增两条
+这三条服务于晨报卡的实际开发与发布路径。贡献是否完成、哪些用例通过，以对应报告的命令和输出为准；本索引不以报告数量代替效果证据。
 
-| 编号 | 对象 | 一句话 | 严重度 | 状态 |
-|---|---|---|---|---|
-| [ISSUE-04](ISSUE-04-等宽字体缺CJK兜底中文豆腐块.md) | `makepad` `font_policy.rs` | International 集的等宽链只挂 LiberationMono，且 `lazy_chain(Monospace)` 返回空——`theme.font_code` 的中文整段豆腐（页签「新报」、报头期号），normal/bold 却正常 | 中 | 已修（`my-entry/patches/host-font-monospace-cjk.patch`），本机重建验证 |
-| [ISSUE-05](ISSUE-05-开机窗口内宿主请求被静默吞掉.md) | `makepad` splash_host / 宿主投递 | 开机后约 0~4.5 秒内发出的 `host.request` **无回执、无错误、无日志**；4.5~12 秒时通时不通；12 秒后稳定。凡是"启动即探测"的应用都会被静默骗一次 | 中高 | 未修，已按实测规律绕过（配乐改启动器直放 + ack 重试；语音"用时再探"） |
+## 历史报告的当前状态
 
-## 第一轮三条
+| 编号 | 对象 | 2026-10-14 复核结论 |
+|---|---|---|
+| [ISSUE-01](ISSUE-01-hub-scan-审核包截图字段不一致.md) | App Hub `hub scan` | 撤回「顶层截图必须与 listing 截图一致」的缺陷归因：两字段语义不同，上游文档明确 scan 包不携带截图。保留原输出，不计本轮修复 |
+| [ISSUE-02](ISSUE-02-octo-publish-github%20生成的%20workflow%20不可用.md) | App Flow / App Hub 发布接口 | 旧 `publisher-*` 缺失已由上游实现解决；旧的禁止提交 workflow 建议失效。不计本轮修复，当前嵌套路径问题另见 ISSUE-06 |
+| [ISSUE-03](ISSUE-03-能力门拒绝时同步重入VM.md) | makepad `splash_host.rs` | 历史报告记录能力拒绝时同步重入 VM；当时应用已绕过。本轮未运行 Rust 宿主重现，不能据此断言当前上游仍有同一故障 |
+| [ISSUE-04](ISSUE-04-等宽字体缺CJK兜底中文豆腐块.md) | makepad `font_policy.rs` | 历史补丁 `my-entry/patches/host-font-monospace-cjk.patch`，此前轮次记录过本机重建验证。本轮未重复运行，不计新增修复 |
+| [ISSUE-05](ISSUE-05-开机窗口内宿主请求被静默吞掉.md) | makepad / 宿主请求投递 | 历史启动时序观察；应用以重试及延后探测等方式绕过。本轮未重现或定位当前运行时根因，不计本轮修复 |
 
-| 编号 | 对象 | 一句话 | 严重度 | 状态 |
-|---|---|---|---|---|
-| [ISSUE-01](ISSUE-01-hub-scan-审核包截图字段不一致.md) | `hub scan` | 审核包顶层 `screenshots` 是空数组，而同一份包里的 `listing.screenshots` 正确列出四张真实截图——自动审阅会把「交了四张截图」读成「一张没交」 | 中 | 未修，已绕过并留存原始产物 |
-| [ISSUE-02](ISSUE-02-octo-publish-github%20生成的%20workflow%20不可用.md) | `octo publish-github` | 生成的 `.github/workflows/publish-app.yml` 调用了 `hub` 里根本没有的四个 `publisher-*` 子命令，还硬编码了一条本仓库不存在的路径；而 `PUBLISHING.md` 明写「这套东西还不存在，不要加这种 workflow」 | **高** | 未修，已按要求不提交该文件 |
-| [ISSUE-03](ISSUE-03-能力门拒绝时同步重入VM.md) | `makepad` `splash_host.rs` | 能力门拒绝时用 `vm.call` **同步重入** VM，和正常路径的异步回执（`splash_host_respond`）不是同一条机制，观察到以 `pop_stack_resolved on empty stack` 收场——一个与「能力没授予」无关的错误 | 中高 | 未修，已绕过 |
+ISSUE-01、ISSUE-02 顶部已补复核说明，正文中的原始输出保留为历史证据；阅读时应先看复核结论，不能继续使用已撤回或过时的建议。
 
----
+## 历史补丁档案
 
-## 除了报 issue，本轮还往上游补了什么
+- `my-entry/patches/host-font-monospace-cjk.patch`：此前轮次保存的等宽中文字体补丁，对应 ISSUE-04。
+- `my-entry/patches/host-services.patch`、`host-voice.patch`：此前轮次保存的本地宿主模型与语音服务扩展，使用说明见 `my-entry/patches/README.md`。这些本地改动不等于当前官方 shell 已提供同一接口，也不证明新版本宿主兼容。
 
-**字体覆盖（服务层贡献，不是绕过）**
+## 验证边界与复核方法
 
-`my-entry/patches/host-font-monospace-cjk.patch`：给官方 `makepad` 的 International
-字体集补上等宽的 CJK 兜底（ISSUE-04 的修复件）。字体角色的设计文档自己写着
-「每个角色必须带完整链」，等宽是唯一漏的——属于补齐设计本意，不是给应用开小灶。
+本轮报告按可复现命令、确切版本、源码位置、修复前后结果组织。Python 工具测试通过，只证明相应用例覆盖的工具行为；不会自动证明应用能在原生宿主运行、模型服务可用或 GitHub 发布成功。
 
-**语音能力（服务层贡献，不是绕过）**
+本轮未编译或运行 Rust `hub` / `card-host`，未新增实机截图，也未执行付费模型、语音或图像服务。历史轮次的实机记录不能替代本轮验证。旧 `hub scan` 输出字段差异也不再作为失败用例。
 
-`my-entry/patches/host-services.patch`（历史档案 `host-voice.patch`）：为官方 `card-host` 新增一整个 `crates/llm-service`，提供 `llm.speech / speak / speaking / listen_start / listen_poll / listen_stop`，Windows 上落到 `makepad-system-speech` 与 `Windows.Media.SpeechRecognition`。
+本地读取当前上游源码即可核对 ISSUE-01 / ISSUE-02 的复核依据：
 
-这不是「给应用开小灶」：补丁**没有**改 `app-policy`，也就是**没有**把 `llm` 能力发给商店应用——那会违反官方规定。它做的是官方文档点名要求的事：`HOST-SERVICES.md` L22「a store app that needs something else needs **a new service in the shells (below), not a workaround in the bundle**」。于是本应用在商店宿主上**刻意不声明 `llm`**，把语音当「有则更好」的可选增强；一旦宿主装了这个补丁，语音立刻可用。
-
-本轮在补丁上又加了一层：**未指定音色时挑最自然的那个**（`crates/llm-service/src/voice.rs`），并把推荐的中文神经音色写进注释，便于接入 `edge-tts` 一类云端神经音色时直接对齐命名。
-
----
-
-## 怎么复核
-
-```bash
-# ISSUE-01：重跑一次就复现（需要自建 hub）
-hub scan my-entry/morning-brief/bundle --packet build/review.json
-python -c "import json;d=json.load(open('build/review.json'));print(d['screenshots']);print(d['listing']['screenshots'])"
-
-# ISSUE-02：两个证据都在仓库里
-cat .github/workflows/publish-app.yml      # 用了 publisher-*
-hub --help                                 # 没有 publisher-*
-
-# ISSUE-03
-sed -n '270,300p' makepad/widgets/src/splash_host.rs   # 同步 vm.call
-grep -n "pop_stack_resolved on empty stack" makepad/platform/script/src/thread.rs
+```powershell
+rg -n 'Paths to screenshots|screenshots: Vec::new' OctoSense-App-Hub/crates/app-hub/src/scan.rs
+rg -n 'Bundle-relative paths|pub screenshots' OctoSense-App-Hub/crates/app-policy/src/listing.rs
+rg -n 'packet carries no screenshots' OctoSense-App-Hub/docs/SUBMITTING.md
+rg -n 'publisher-prepare|publisher-attach|publisher-verify|publisher-pack' OctoSense-App-Hub/crates/app-hub/src/bin/hub.rs
 ```
+
+上游源码不随本仓库分发；换机器时请先按报告检出相同提交。修复补丁的应用与回归命令见 ISSUE-06 / ISSUE-07 / ISSUE-08。
