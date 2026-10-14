@@ -1,5 +1,20 @@
 # patches —— 对官方仓库的改动，以及我们对上游的回报
 
+## 第 47 轮：App Hub 迁移保护用户数据（2026-10-14）
+
+[app-hub-legacy-migration-data-loss.patch](app-hub-legacy-migration-data-loss.patch) 适用于官方 `OctoSense-App-Hub` 的固定提交 `386359153ed6377b5f047bd9ed2767a6a2ac2bc7`。自动迁移此前只看路径名，会在扫描或打开应用时删除普通的 `bundle`、`.bundle-next`、`.bundle-previous` 数据。本补丁保护已有现代安装，仅迁移 ID 与实际 BLAKE3 相符的完整旧包，保留其他路径，支持空安装目录的中断重试，并附真实集成回归。
+
+在固定版本、保持 LF 的干净官方源码根目录执行：
+
+```powershell
+git apply --check <本补丁绝对路径>
+git apply <本补丁绝对路径>
+cargo test -p octosense-app-hub --test install_layout -- --nocapture
+cargo test -p octosense-app-contract -p octosense-app-policy -p octosense-app-hub -- --nocapture
+```
+
+已验证干净应用、20 项安装布局和三包 350 项测试通过（后者包含前者）。完整 Cargo 验证使用官方路径依赖机制与本机较旧的 sibling revision，未验证精确 Git pins、GUI 或 appstore 套件。[详细报告](../../生态贡献/ISSUE-10-AppHub迁移误删应用数据.md) · [真实日志、复核步骤和边界](../evidence/hub-migration-20261014/README.md)。这份补丁交付到作品仓库，尚未向官方上游提交。
+
 ## 第 46 轮：生态工具链修复（2026-10-14）
 
 本轮新增两个补丁，包含实际代码与回归测试。官方 checkout 被忽略，**保存到这里的 patch 才是主仓库交付物**。

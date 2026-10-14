@@ -1,0 +1,30 @@
+{
+  "baseline": "386359153ed6377b5f047bd9ed2767a6a2ac2bc7",
+  "files": [
+    "crates/app-hub/src/client.rs",
+    "crates/app-hub/tests/install_layout.rs",
+    "crates/appstore/src/lib.rs"
+  ],
+  "results": [
+    {
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "E:\\OneDrive\\文档\\ChatGPT\\找生态bug\\morning-brief\\my-entry\\patches\\app-hub-legacy-migration-data-loss.patch"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "git",
+        "apply",
+        "E:\\OneDrive\\文档\\ChatGPT\\找生态bug\\morning-brief\\my-entry\\patches\\app-hub-legacy-migration-data-loss.patch"
+      ],
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "matches_working_source": true
+}

@@ -2,12 +2,13 @@
 
 这里记录晨报卡实际遇到的上游问题、复现证据与补丁。历史观察与当前结论分开保存：上游已解决的兼容问题、撤回的归因，以及此前轮次的补丁，都不重复计入本轮修复。
 
-本轮围绕晨报卡的发布和 Windows 开发流程复核。App Flow 基线为 `d0344682df7c52ae5a79055f20f148f542d115e0`；它固定的 App Hub 工具链为 `386359153ed6377b5f047bd9ed2767a6a2ac2bc7`。官方仓库未纳入本作品 Git 历史，源头修复以本仓库保存的补丁、复现脚本和各报告为准。
+第 47 轮新增 App Hub 自动迁移的数据丢失修复；第 46 轮围绕晨报卡的发布和 Windows 开发流程复核。App Flow 基线为 `d0344682df7c52ae5a79055f20f148f542d115e0`；它固定的 App Hub 工具链为 `386359153ed6377b5f047bd9ed2767a6a2ac2bc7`，也是第 47 轮修复基线。官方仓库未纳入本作品 Git 历史，源头修复以本仓库保存的补丁、复现脚本和各报告为准。
 
 ## 2026-10-14 本轮问题
 
 | 编号 | 对象 | 复现的问题 | 状态与验证入口 |
 |---|---|---|---|
+| [ISSUE-10](ISSUE-10-AppHub迁移误删应用数据.md) | App Hub `adopt_legacy_install` | 全新安装的应用保存普通 `bundle` 数据目录后，扫描/打开会误删；旧迁移也会误动同名用户数据 | 已修复并保存补丁；真实安装布局 20 项通过，三包准入完整测试 350 项通过（包含前述 20 项）；[证据与边界](../my-entry/evidence/hub-migration-20261014/README.md)，未提交官方上游 |
 | [ISSUE-09](ISSUE-09-setup-只读Git对象导致转换失败.md) | OctoSense `tools/setup.py` | Windows 只读 Git 对象使 clone 转 worktree 的完成清理与失败回滚报 `WinError 5` | 已提交 [上游 PR #540](https://github.com/OctoSense-org/OctoSense/pull/540)；目标 4 项通过；完整套件由 8 错降到 5 错，详见记录 |
 | [ISSUE-06](ISSUE-06-publish-github-嵌套目录假成功.md) | App Flow `tools/octo` 发布流程 | 晨报卡应用在 `my-entry/morning-brief`；生成器将该目录当仓库根，写入 GitHub 不读取的嵌套 workflow 目录，并仍使用根目录 bundle 模板 | 已修复；发布回归 16 项 OK（3 个既有子用例 skip） |
 | [ISSUE-07](ISSUE-07-octo-Windows编码与行尾.md) | App Flow `tools/octo` | 文本 I/O 依赖 Windows 默认编码，写入时还可能转换行尾，影响 UTF-8 源码与 bundle 字节 | 已修复；4 项编码回归通过 |
@@ -34,9 +35,9 @@ ISSUE-01、ISSUE-02 顶部已补复核说明，正文中的原始输出保留为
 
 ## 验证边界与复核方法
 
-本轮报告按可复现命令、确切版本、源码位置、修复前后结果组织。Python 工具测试通过，只证明相应用例覆盖的工具行为；不会自动证明应用能在原生宿主运行、模型服务可用或 GitHub 发布成功。
+报告按可复现命令、确切版本、源码位置、修复前后结果组织。Python 工具测试通过，只证明相应用例覆盖的工具行为；不会自动证明应用能在原生宿主运行、模型服务可用或 GitHub 发布成功。
 
-本轮未编译或运行 Rust `hub` / `card-host`，未新增实机截图，也未执行付费模型、语音或图像服务。历史轮次的实机记录不能替代本轮验证。旧 `hub scan` 输出字段差异也不再作为失败用例。
+第 47 轮执行了真实 Rust App Hub 安装布局及准入三包测试，实际依赖 revision、命令、源码哈希和环境限制见 ISSUE-10 证据。第 46 轮只运行 Python 工具验证，未编译或运行 Rust `hub` / `card-host`。这两轮均未新增 GUI 实机截图或执行付费模型、语音、图像服务；历史轮次的实机记录不能替代本轮验证。旧 `hub scan` 输出字段差异也不再作为失败用例。
 
 本地读取当前上游源码即可核对 ISSUE-01 / ISSUE-02 的复核依据：
 

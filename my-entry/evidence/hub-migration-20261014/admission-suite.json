@@ -1,0 +1,16 @@
+{
+  "command": [
+    "D:/octosense/rustup-home/toolchains/stable-x86_64-pc-windows-gnu/bin/cargo.exe",
+    "test",
+    "-p",
+    "octosense-app-contract",
+    "-p",
+    "octosense-app-policy",
+    "-p",
+    "octosense-app-hub",
+    "--",
+    "--nocapture"
+  ],
+  "exit_code": 0,
+  "target_dir": "C:/Windows/Temp/hub-migration-validation-target"
+}

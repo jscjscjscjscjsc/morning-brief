@@ -1,0 +1,529 @@
+Command: D:/octosense/rustup-home/toolchains/stable-x86_64-pc-windows-gnu/bin/cargo.exe test -p octosense-app-contract -p octosense-app-policy -p octosense-app-hub -- --nocapture
+Exit code: 0
+
+   Compiling octosense-app-contract v1.12.0 (E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\OctoSense-App-Hub\crates\app-contract)
+   Compiling octosense-app-policy v0.1.0 (E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\OctoSense-App-Hub\crates\app-policy)
+   Compiling octosense-app-hub v0.1.0 (E:\OneDrive\文档\ChatGPT\找生态bug\morning-brief\OctoSense-App-Hub\crates\app-hub)
+warning: unused variable: `dir`
+   --> crates\app-contract\src\bundle.rs:135:13
+    |
+135 |         let dir = scratch("symlink");
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_dir`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `octosense-app-contract` (lib test) generated 1 warning (run `cargo fix --lib -p octosense-app-contract --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.84s
+     Running unittests src\lib.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\octosense_app_contract-1e5e12b97a5dc1a3.exe)
+
+running 15 tests
+test bundle::tests::a_nested_path_is_named_with_slashes_wherever_it_is_read ... ok
+test research::tests::the_old_toolbox_shape_gets_advice ... ok
+test host_api::tests::requirements_cannot_name_sheet_methods_or_ambiguous_names ... ok
+test research::tests::the_empty_grant_is_octos_default ... ok
+test research::tests::a_domain_pattern_is_a_bare_domain ... ok
+test host_api::tests::required_versions_are_enforced_but_optional_methods_do_not_block ... ok
+test research::tests::the_rules_are_octos_from_grant ... ok
+test backend::tests::registration_rejects_credential_redirection_and_traversal ... ok
+test bundle::tests::a_symlink_is_refused_rather_than_followed ... ok
+test bundle::tests::a_folder_sorts_before_a_file_that_extends_its_name ... ok
+test bundle::tests::changing_any_content_changes_the_digest ... ok
+test bundle::tests::the_digest_is_the_same_wherever_the_host_separates_paths ... ok
+test entry::tests::a_script_app_gets_its_program_with_the_asset_origin_filled_in ... ok
+test bundle::tests::moving_content_between_files_changes_the_digest ... ok
+test bundle::tests::the_manifest_itself_is_not_part_of_the_digest ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\fixtures.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\fixtures-f4a58428e0e53528.exe)
+
+running 3 tests
+test no_fixture_at_this_minor_has_ignored_fields ... ok
+test a_shipped_digest_is_the_digest_of_the_package ... ok
+test every_fixture_resolves_as_it_always_has ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests\github_publisher.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\github_publisher-fa8eb57d9e255c9a.exe)
+
+running 5 tests
+test legacy_manifest_signing_bytes_have_no_new_field ... ok
+test keyless_marker_and_identity_are_inseparable ... ok
+test identity_and_tag_are_canonical_and_version_bound ... ok
+test contract_without_a_real_verifier_refuses_even_in_unsigned_mode ... ok
+test signing_bytes_exclude_only_proof_and_retain_identity ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\growth.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\growth-0cf5c8a5682d89d9.exe)
+
+running 33 tests
+test hostlimits_builders_set_each_ceiling ... ok
+test a_window_hint_needs_schema_minor_1 ... ok
+test an_empty_requires_and_a_newer_minor_are_accepted ... ok
+test an_unknown_required_feature_needs_a_newer_host ... ok
+test palpo_extension_preserves_schema_and_declares_its_host_feature ... ok
+test host_api_marker_requires_the_policy_abi_even_without_a_device_method ... ok
+test calendar_ui_access_is_explicit_and_does_not_grant_other_services ... ok
+test oauth_provider_services_are_independent_grants ... ok
+test host_api_requirements_need_the_feature_and_do_not_grant_access ... ok
+test a_newer_minor_with_an_unknown_required_feature_is_refused ... ok
+test an_apps_own_functions_are_a_grant_of_their_own ... ok
+test media_services_require_exact_separate_grants ... ok
+test native_calendar_grant_is_separate_and_required_methods_must_exist ... ok
+test a_manifest_without_components_signs_as_before ... ok
+test playback_never_grants_recording_storage_or_background_authority ... ok
+test a_newer_minor_ignores_an_unknown_optional_field_and_reports_it ... ok
+test backend_configuration_keeps_account_and_abi_boundaries_without_auth_disclosure ... ok
+test a_newer_manifest_signs_with_the_fields_it_was_signed_with ... ok
+test palpo_uses_exact_service_grants ... ok
+test a_window_hint_is_held_to_its_range ... ok
+test resolve_checks_requires_even_for_a_manifest_not_read_by_parse ... ok
+test a_newer_minor_reads_the_window_and_still_ignores_what_it_does_not_know ... ok
+test a_manifest_without_a_window_parses_and_signs_as_before ... ok
+test a_newer_minor_ignores_unknown_fields_at_every_level ... ok
+test a_newer_minor_still_refuses_what_it_knows_to_be_wrong ... ok
+test a_window_hint_parses_at_schema_minor_1_and_grants_nothing ... ok
+test selected_file_access_needs_its_own_grant_and_an_implemented_host ... ok
+test shared_components_need_their_abi_not_a_capability_grant ... ok
+test wasm_component_abi_is_independent_of_usage_declarations ... ok
+test the_new_fields_do_not_change_an_older_manifests_signing_bytes ... ok
+test unknown_fields_are_still_refused ... ok
+test shared_components_parse_and_pin_one_exact_version_and_digest ... ok
+test shared_component_entries_are_checked_one_by_one ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\reserved_host_files.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\reserved_host_files-4a80a1dfaf683360.exe)
+
+running 2 tests
+test host_file_reservation_does_not_claim_json_or_lock_namespaces ... ok
+test exact_host_catalog_file_ids_are_reserved_on_every_filesystem ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\octosense_app_hub-c2015854a5e5334b.exe)
+
+running 41 tests
+test github_catalog::tests::every_authenticated_github_claim_is_required ... ok
+test functions::tests::only_the_scoped_wasi_packages_are_allowed ... ok
+test functions::tests::tcp_udp_and_dns_imports_are_allowed_and_disclosed_as_network ... ok
+test functions::tests::the_reach_line_names_what_a_component_imports ... ok
+test client::catalog_cache_tests::authenticated_catalogs_cannot_roll_back_or_equivocate_at_a_sequence ... ok
+test client::catalog_cache_tests::staged_install_retains_authenticated_state_and_v2_requirement ... ok
+test github_publisher::tests::authenticated_claim_policy_pins_ids_tag_all_commits_and_workflow ... ok
+test client::catalog_cache_tests::cache_contention_fails_bounded_without_overwriting ... ok
+test github_catalog::tests::attested_statement_must_name_one_exact_subject_and_workflow ... ok
+test github_publisher::tests::incomplete_or_unrelated_public_proof_cannot_authenticate_a_manifest ... ok
+test github_publisher::tests::subject_policy_refuses_different_manifest_tag_commit_and_repo ... ok
+test index::tests::an_agent_that_asks_questions_is_told_so ... ok
+test index::tests::every_known_capability_is_told_in_plain_words ... ok
+test pack::tests::a_pack_may_not_write_outside_its_staging_directory ... ok
+test remote::tests::days_between_counts_civil_days ... ok
+test remote::tests::today_is_a_plausible_iso_date ... ok
+test publishers::github_policy_tests::unsigned_or_legacy_update_cannot_bypass_recorded_github_authority ... ok
+test publishers::github_policy_tests::identity_policy_accepts_fresh_or_same_authority_advances_and_refuses_changes ... ok
+test client::catalog_cache_tests::v2_required_rejects_valid_legacy_even_before_first_success ... ok
+test client::catalog_cache_tests::v2_history_cannot_be_removed_rewritten_reordered_or_reoffered_after_refresh ... ok
+test gate::tests::a_bundle_that_asks_for_a_password_is_refused ... ok
+test github_catalog::tests::unsigned_unknown_oversize_and_legacy_documents_cannot_enter_v2 ... ok
+test scan::tests::windows_reviewer_fixture_process ... ok
+test advisories::tests::an_advisory_affects_what_it_does_not_patch_or_spare ... ok
+test github_catalog::tests::public_proof_verifies_offline_but_never_authorizes_the_app_hub ... ok
+test gate::tests::a_store_bundle_may_not_take_a_system_app_id ... ok
+test scan::tests::a_script_app_is_reviewed_by_its_program ... ok
+test github_catalog::tests::tampered_payload_signature_and_transparency_evidence_are_refused ... ok
+test gate::tests::a_script_app_reaches_only_the_hosts_it_declares ... ok
+test pack::tests::a_packed_system_app_carries_the_digest_of_its_files ... ok
+test pack::tests::a_pack_round_trips_to_the_same_digest ... ok
+test gate::tests::a_bundle_that_needs_storage_without_asking_is_warned ... ok
+test scan::tests::a_reject_is_a_reject ... ok
+test scan::tests::a_reviewer_verdict_is_parsed_even_when_wrapped_in_prose ... ok
+test client::catalog_cache_tests::atomic_cache_retains_proof_and_rechecks_persisted_high_watermark ... ok
+test github_catalog::tests::wrong_signer_and_root_or_authority_expiry_are_refused ... ok
+test github_publisher::tests::an_unrelated_or_missing_proof_cannot_authenticate_a_component_release ... ok
+The system cannot find the path specified.
+test scan::tests::a_broken_reviewer_never_produces_a_pass ... ok
+test client::catalog_cache_tests::v2_component_history_cannot_be_removed_rewritten_reordered_or_reoffered ... ok
+test github_catalog::tests::a_new_component_is_admitted_from_its_reviewed_file_and_index ... ok
+test scan::tests::windows_reviewer_supports_a_quoted_executable_path_with_spaces ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.85s
+
+     Running unittests src\bin\hub.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\hub-7ac3e46217448987.exe)
+
+running 3 tests
+test tests::stamp_still_works_before_signing_and_before_the_listing ... ok
+test tests::stamp_refuses_a_manifest_the_gate_cannot_read ... ok
+test tests::stamp_writes_the_digest_the_directory_hashes_to ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\agent.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\agent-448f86bfc50c0918.exe)
+
+running 7 tests
+test the_review_packet_shows_the_agent_files_and_asks_about_them ... ok
+test the_catalog_entry_carries_the_tools_and_the_store_lines ... ok
+test the_gate_refuses_a_native_apps_id ... ok
+test a_packed_system_app_pins_its_agent_files_and_loads_after_unpacking ... ok
+test agent_destinations_are_disclosures_not_host_allowlists ... ok
+test the_gate_refuses_what_the_agent_review_refuses_and_the_digest_pins_agent_files ... ok
+test the_gate_admits_the_news_agent_and_records_destructive_tools ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\assistant_disclosure.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\assistant_disclosure-72d75922458aa803.exe)
+
+running 2 tests
+test own_tools_and_additional_requests_stay_distinct_in_consent ... ok
+test store_consent_discloses_signed_own_read_tools_with_no_generic_grants ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests\bundle_admission.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\bundle_admission-970148100a7fb6e6.exe)
+
+running 41 tests
+test a_nested_bundle_is_read_under_the_names_a_manifest_uses ... ok
+test a_script_entry_must_be_utf8_text ... ok
+test image_dimensions_are_bounded_before_decode ... ok
+test a_component_that_does_not_validate_is_refused ... ok
+test displayed_url_is_not_a_resource_reference_but_remains_conservatively_denied ... ok
+test launcher_icon_must_be_square ... ok
+test fake_or_truncated_png_is_refused ... ok
+test an_apps_own_functions_pass_with_or_without_wasm_disclosure ... ok
+test kit_expansion_is_bounded_before_cloning_component_styles ... ok
+test data_fields_and_kit_prop_names_are_not_resource_loads ... ok
+test font_attribution_links_are_documentation_not_network_grants ... ok
+test a_module_needs_no_feature_and_the_feature_alone_is_only_a_warning ... ok
+test a_bundle_without_an_entry_is_refused ... ok
+test a_component_may_call_its_apps_host_services_with_no_grant_of_its_own ... ok
+test malformed_svg_is_refused ... ok
+test a_bundle_carries_at_most_eight_modules_and_hears_about_none ... ok
+test runnable_script_fixture_passes ... ok
+test missing_kit_is_refused ... ok
+test native_theme_overlay_does_not_require_native_placements ... ok
+test runnable_card_fixture_passes ... ok
+test missing_local_resource_has_a_stable_code_and_path ... ok
+test pack_limits_apply_before_writing_staged_files ... ok
+test svg_external_resources_are_refused ... ok
+test undeclared_kit_component_is_refused ... ok
+test listed_crates_are_checked_against_a_rustsec_checkout ... ok
+test theme_font_token_is_checked_even_without_a_component_reference ... ok
+test malformed_card_data_and_utf8_are_refused ... ok
+test an_svg_style_element_is_allowed_unless_it_reaches_outside ... ok
+test svg_mixed_local_and_external_css_urls_are_refused ... ok
+test component_files_work_without_usage_declarations_and_remain_disclosed ... ok
+test a_component_is_refused_unless_the_manifest_requires_components ... ok
+test a_component_passes_under_its_feature_and_tells_reviewers_what_it_reaches ... ok
+test signed_bundles_cannot_claim_host_catalog_or_cache_lock_files ... ok
+test a_module_out_of_place_misnamed_or_not_wasm_is_refused ... ok
+test a_component_that_uses_http_declares_net_and_reviewers_see_it ... ok
+test socket_components_require_the_host_abi_but_not_network_disclosures ... ok
+test two_crate_lists_or_an_unreadable_one_are_refused ... ok
+test kit_font_objects_and_tokens_cannot_bypass_asset_checks ... ok
+test reviewers_see_the_crates_a_component_lists ... ok
+test metadata_limits_reject_large_files_many_entries_and_deep_directories ... ok
+test local_server_reports_match ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.02s
+
+     Running tests\catalog_tool_compat.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\catalog_tool_compat-d272c27da047273f.exe)
+
+running 2 tests
+test display_projection_never_masks_a_forbidden_binding_from_admission ... ok
+test legacy_catalog_tools_roundtrip_without_changing_signed_bundle_dispatch ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests\cli.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\cli-2024ca938a0eed0b.exe)
+
+running 7 tests
+test signed_scan_needs_the_documented_publisher_key ... ok
+test invalid_commands_and_missing_positionals_fail_without_writing ... ok
+test system_mode_accepts_unsigned_system_bundles_but_refuses_store_ids ... ok
+test help_is_read_only_for_commands_that_would_read_or_create_files ... ok
+test keygen_creates_a_valid_key_and_never_replaces_an_existing_file ... ok
+test component_info_prints_a_function_files_kind_imports_and_typed_exports ... ok
+test system_development_checks_cannot_publish_or_relax_store_checks ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running tests\component_cli.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\component_cli-d5d3ad3c9c7ce7ce.exe)
+
+running 4 tests
+test an_index_entry_needs_github_provenance ... ok
+test a_development_hub_publishes_a_component_and_resolves_an_app_against_it ... ok
+test prepare_describes_the_file_as_a_development_release_or_a_subject_to_attest ... ok
+test check_and_pack_hold_a_release_to_its_file ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
+
+     Running tests\component_store.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\component_store-70371d67a0df6905.exe)
+
+running 8 tests
+test shared_socket_imports_cannot_skip_the_app_requirement_even_if_already_cached ... ok
+test a_system_app_carries_its_components_in_its_bundle ... ok
+test socket_apps_keep_catalog_readable_but_need_a_compatible_host_before_download ... ok
+test a_staged_install_keeps_components_in_the_hosts_store ... ok
+test a_collection_never_removes_what_an_unreadable_app_might_pin ... ok
+test an_install_keeps_each_component_once_read_only_and_verified ... ok
+test an_uninstall_collects_what_no_installed_app_pins ... ok
+test a_changed_missing_or_withdrawn_component_stops_the_app ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.67s
+
+     Running tests\freshness.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\freshness-cc9870fbbc0c7f90.exe)
+
+running 2 tests
+test a_catalog_signed_by_an_uncertified_working_key_is_refused ... ok
+test installs_pause_when_the_catalog_is_stale_but_a_fresh_one_is_fine ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\github_catalog_prepare.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\github_catalog_prepare-d01aa91165a694ee.exe)
+
+running 7 tests
+test only_monotonic_withdrawal_can_change_existing_history ... ok
+test actual_signed_bundle_pack_and_index_are_admitted_without_execution ... ok
+test pack_index_source_and_signer_substitution_are_refused ... ok
+test component_history_may_only_be_withdrawn ... ok
+test a_new_app_may_pin_a_component_its_catalog_offers ... ok
+test cli_authenticates_current_legacy_catalog_and_emits_exact_review_receipt ... ok
+test a_new_component_needs_github_provenance_and_its_reviewed_files ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+     Running tests\github_publisher_cli.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\github_publisher_cli-454b22295507ebc2.exe)
+
+running 11 tests
+test publisher_help_has_no_key_generation_or_migration_requirement ... ok
+test downloaded_pack_traversal_is_refused_before_writing_outside_output ... ok
+test invalid_github_proof_is_not_unsigned_or_packable ... ok
+test prepare_refuses_signed_input_and_output_inside_bundle ... ok
+test entry_builder_refuses_a_false_github_publisher_label_even_with_a_mock_gate ... ok
+test attach_rejects_unrelated_proof_and_post_prepare_edits_without_mutation ... ok
+test prepare_binds_final_bundle_without_any_developer_key ... ok
+test stamp_refuses_legacy_signatures_without_breaking_unsigned_null_signatures ... ok
+test invalid_release_unpack_cleans_only_its_owned_output ... ok
+test local_catalog_signature_cannot_turn_an_invalid_publisher_proof_into_an_install ... ok
+test authoring_commands_preserve_prepared_and_attested_github_manifests ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests\install_layout.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\install_layout-3fe76500f53fbf36.exe)
+
+running 20 tests
+test a_legacy_manifest_must_match_its_app_directory ... ok
+test ordinary_data_files_are_not_legacy_installs ... ok
+test ordinary_data_directories_are_not_legacy_installs ... ok
+test migration_preserves_app_data_named_bundle_when_a_new_install_exists ... ok
+test an_unpublished_next_bundle_is_not_adopted ... ok
+test an_interrupted_modern_install_preserves_all_legacy_paths ... ok
+test migrating_a_bundle_preserves_unknown_update_data ... ok
+test a_legacy_manifest_must_match_its_bundle_bytes ... ok
+test an_empty_modern_directory_does_not_block_a_legacy_migration_retry ... ok
+test removing_an_app_removes_its_bundle_and_its_data ... ok
+test migration_preserves_app_data_named_after_update_directories ... ok
+test a_legacy_interrupted_update_is_settled_as_it_moves ... ok
+test recovery_preserves_user_data_at_the_old_bundle_path ... ok
+test an_installed_bundle_is_outside_the_apps_storage ... ok
+test completed_legacy_updates_keep_the_published_bundle ... ok
+test a_legacy_install_moves_out_once_and_keeps_its_data ... ok
+test migration_does_not_follow_an_app_directory_link ... ok
+test a_moved_install_does_not_replace_a_newer_one ... ok
+test migration_does_not_follow_the_installs_directory_link ... ok
+test migration_preserves_links_at_legacy_bundle_paths ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests\installed_release.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\installed_release-59d6ffade97a3603.exe)
+
+running 13 tests
+test launch_rejects_modified_installed_bytes ... ok
+test launch_rejects_modified_manifest_even_when_payload_digest_matches ... ok
+test install_rejects_a_different_manifest_with_the_same_id_version_and_digest ... ok
+test launch_validation_is_bounded_and_failed_preparation_cleans_up ... ok
+test ambiguous_release_history_cannot_approve_a_launch ... ok
+test install_verifies_against_the_catalog_key_even_if_the_caller_supplies_another ... ok
+test launch_checks_the_catalog_publisher_signature ... ok
+test offered_v1_runs_after_v2_publish_with_v1_permissions ... ok
+test lifecycle_keeps_open_and_update_independent_even_after_withdrawal ... ok
+test offline_approved_version_remains_openable_but_missing_release_does_not ... ok
+test withdrawal_between_preparation_and_start_is_refused ... ok
+test prepared_launch_retains_its_verified_bytes_when_an_update_replaces_the_install ... ok
+test withdrawal_targets_the_installed_release_only ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+     Running tests\publisher_continuity.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\publisher_continuity-f0866bc0fa9621f2.exe)
+
+running 13 tests
+test duplicate_key_mappings_do_not_choose_the_first_key ... ok
+test existing_signed_v1_catalog_still_verifies ... ok
+test entry_publisher_must_match_signature_owner ... ok
+test entry_cannot_reuse_a_gate_report_after_manifest_changes ... ok
+test refused_report_or_changed_content_cannot_be_published ... ok
+test unsigned_update_is_refused_even_in_local_check ... ok
+test an_unsigned_first_release_still_publishes_with_allow_unsigned ... ok
+test conflicting_catalog_owner_and_missing_recorded_key_require_reconciliation ... ok
+test unknown_rotation_requires_registry_authorization ... ok
+test replacement_key_same_id_is_refused ... ok
+test one_publisher_can_publish_two_apps_but_cannot_redefine_its_key ... ok
+test an_unsigned_apps_first_signed_update_records_its_key ... ok
+test publish_authenticates_history_and_keeps_the_recorded_key ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running tests\shared_components.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\shared_components-3fda5b69611d4b4a.exe)
+
+running 13 tests
+test the_feature_without_components_is_a_warning ... ok
+test a_catalog_without_components_reads_signs_and_attests_as_before ... ok
+test a_shared_socket_component_propagates_its_abi_to_the_app ... ok
+test the_gate_refuses_a_file_that_is_not_the_release ... ok
+test an_app_resolves_its_components_from_the_catalog_and_reviewers_see_their_reach ... ok
+test a_missing_mismatched_or_withdrawn_component_refuses_the_app ... ok
+test a_release_describes_its_file_and_reviewers_see_what_it_reaches ... ok
+test a_system_bundle_socket_component_requires_the_same_host_abi ... ok
+test missing_declarations_do_not_refuse_supported_component_imports ... ok
+test a_signed_catalog_records_components_beside_apps_and_refuses_contradictions ... ok
+test a_version_is_published_once_and_a_component_id_is_no_apps ... ok
+test a_store_app_never_ships_components_and_a_system_app_ships_each_it_pins ... ok
+test component_ids_versions_publishers_and_listings_follow_their_rules ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.18s
+
+     Running unittests src\lib.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\octosense_app_policy-c310c5cc47bf1b5e.exe)
+
+running 16 tests
+test services::tests::a_prefix_or_a_near_name_is_not_a_service ... ok
+test services::tests::connected_services_have_consent_words_without_implied_grants ... ok
+test services::tests::every_service_name_is_a_known_capability_and_has_words ... ok
+test listing::tests::a_complete_listing_parses ... ok
+test listing::tests::the_closed_lists_are_enforced ... ok
+test listing::tests::assistant_provider_access_is_disclosed_but_local_ui_does_not_gain_it ... ok
+test listing::tests::a_privacy_policy_must_be_https_and_assets_must_stay_in_the_bundle ... ok
+test listing::tests::a_model_app_is_told_its_inputs_go_to_your_ai_provider ... ok
+test listing::tests::a_glance_app_is_told_as_showing_cards_that_open_only_it ... ok
+test listing::tests::a_direct_allowlist_does_not_claim_to_limit_shared_provider_requests ... ok
+test listing::tests::the_privacy_summary_comes_from_the_manifest_not_the_listing ... ok
+test listing::tests::unknown_fields_are_refused ... ok
+test listing::tests::a_research_app_is_told_what_it_searches_and_a_crawl_app_that_it_reaches_more ... ok
+test listing::tests::tool_only_ask_is_distinct_from_no_assistant_and_a_local_only_agent ... ok
+test research::tests::the_words_say_the_scope ... ok
+test listing::tests::connected_apps_disclose_service_traffic_without_a_direct_network_grant ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\admission.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\admission-32f340b8dcfe282a.exe)
+
+running 47 tests
+test a_changed_bundle_is_refused_before_anything_else ... ok
+test a_foreign_schema_is_refused ... ok
+test an_id_may_not_navigate_the_filesystem ... ok
+test a_native_apps_id_is_refused_at_resolve ... ok
+test a_smaller_quota_is_honoured ... ok
+test an_unsigned_bundle_is_refused_when_the_host_requires_signing ... ok
+test an_unknown_field_is_refused_so_a_newer_manifest_cannot_run_under_looser_rules ... ok
+test a_quota_above_the_hosts_ceiling_is_clamped_not_granted ... ok
+test an_unknown_capability_is_refused ... ok
+test a_directory_bundle_is_admitted_by_its_precomputed_digest ... ok
+test an_assistant_prefix_or_invented_service_is_refused ... ok
+test an_agents_budget_is_clamped_like_any_other_quota ... ok
+test an_agent_may_only_use_tools_the_host_offers_contained_apps ... ok
+test a_signature_without_a_verifier_is_refused_rather_than_ignored ... ok
+test an_app_gets_bounded_private_storage_with_or_without_a_declaration ... ok
+test a_manifest_without_the_new_storage_fields_signs_as_before ... ok
+test crawl_needs_its_limits_and_the_limits_need_crawl ... ok
+test a_host_may_not_be_a_wildcard_a_url_a_port_or_a_scheme ... ok
+test a_manifest_without_a_research_scope_signs_as_it_did ... ok
+test an_agent_may_keep_ask_user_question_and_no_other_kernel_tool ... ok
+test each_published_assistant_service_is_admitted_by_its_exact_name ... ok
+test empty_declarations_do_not_remove_public_runtime_or_storage ... ok
+test every_agent_session_carries_the_app_it_acts_for ... ok
+test full_access_is_not_expressible_in_a_manifest ... ok
+test glance_is_its_own_capability_and_implies_nothing_else ... ok
+test hosts_without_net_are_valid_disclosures ... ok
+test matrix_services_are_exact_and_reading_does_not_grant_sending ... ok
+test old_runtime_or_missing_device_broker_never_activates_capture_side_effects ... ok
+test model_is_its_own_capability_and_implies_nothing_else ... ok
+test only_listed_hosts_are_reachable ... ok
+test prompting_is_a_capability_of_its_own ... ok
+test reading_assistant_history_does_not_grant_starting_a_turn ... ok
+test research_and_crawl_need_a_scope_and_a_scope_needs_one_of_them ... ok
+test runtime_flags_cannot_expose_host_private_data_or_bypass_device_consent ... ok
+test research_is_its_own_capability_with_octos_scope ... ok
+test the_agents_workspace_is_the_apps_own_jail_and_nothing_else_is_readable ... ok
+test the_app_part_is_the_contracts_policy ... ok
+test the_default_tools_offer_every_kernel_tool_a_contained_agent_may_keep ... ok
+test the_isolate_and_the_session_come_from_the_same_declaration ... ok
+test the_jail_is_one_directory_per_app ... ok
+test the_net_capability_without_hosts_gets_the_network_module ... ok
+test the_old_toolbox_scope_shape_is_refused_with_the_fields_to_rename ... ok
+test the_scope_is_checked_with_octos_rules ... ok
+test the_store_says_the_research_scope_in_plain_words ... ok
+test the_store_says_what_a_service_grant_allows ... ok
+test the_storage_block_carries_accounts_the_agent_workspace_and_a_cache_ceiling ... ok
+test the_surface_not_the_prompt_capability_decides_whether_a_service_may_raise_a_sheet ... ok
+
+test result: ok. 47 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\agent_bundle.rs (C:/Windows/Temp/hub-migration-validation-target\debug\deps\agent_bundle-364d68354adcfb48.exe)
+
+running 32 tests
+test a_manifest_written_before_the_agent_additions_signs_the_same_way ... ok
+test background_requires_triggers_and_triggers_are_well_formed ... ok
+test a_native_modules_tools_json_loads_with_the_same_checks ... ok
+test model_needs_and_tiers_are_closed_vocabularies ... ok
+test host_aliases_cannot_target_script_implementations_sheets_or_unreviewed_writes ... ok
+test omitted_host_method_keeps_legacy_serialization_and_dispatch ... ok
+test schemas_are_a_small_checked_subset ... ok
+test shared_local_mutations_keep_risk_and_private_data_floors ... ok
+test an_app_without_agent_or_tools_has_no_agent_bundle ... ok
+test a_tools_input_must_be_an_object ... ok
+test agent_files_without_an_agent_are_refused_but_tools_alone_are_not ... ok
+test the_news_example_loads_as_an_agent_bundle ... ok
+test a_destructive_background_tool_is_allowed_but_always_waits_for_approval ... ok
+test an_apps_own_wasm_function_is_a_reviewed_host_method ... ok
+test confirm_is_declared_per_tool_and_defaults_to_the_host ... ok
+test the_policy_carries_the_model_background_and_triggers ... ok
+test a_local_only_app_may_not_share_a_tool_that_returns_private_data ... ok
+test shared_host_method_alias_is_pinned_without_a_family_declaration ... ok
+test every_tool_is_in_the_apps_namespace ... ok
+test an_outward_tool_waits_for_the_person_and_may_forbid_standing_rules ... ok
+test agent_md_must_be_declared_text_and_small ... ok
+test an_app_whose_short_id_the_broker_cannot_name_may_not_declare_tools ... ok
+test a_contained_app_confirms_only_the_tools_it_implements_itself ... ok
+test tools_colliding_as_broker_names_or_declared_twice_are_refused ... ok
+test the_agent_keeps_ask_user_question_and_no_other_kernel_tool ... ok
+test a_tool_without_risk_or_with_an_unknown_field_is_refused ... ok
+test the_store_says_what_the_agent_and_its_tools_may_do ... ok
+test load_refuses_a_bundle_changed_after_stamping ... ok
+test skills_are_declared_data_only_and_use_only_the_apps_tools ... ok
+test a_native_apps_id_or_namespace_or_the_hosts_own_name_is_refused ... ok
+test billable_media_aliases_need_explicit_private_data_not_family_declarations ... ok
+test host_api_read_aliases_require_privacy_but_not_family_declarations ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+
+   Doc-tests octosense_app_contract
+
+running 2 tests
+test crates\app-contract\src\policy.rs - policy::HostLimits (line 25) ... ok
+test crates\app-contract\src\lib.rs - (line 27) ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+
+   Doc-tests octosense_app_hub
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests octosense_app_policy
+
+running 1 test
+test crates\app-policy\src\lib.rs - (line 21) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.70s
+
