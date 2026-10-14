@@ -1,0 +1,21 @@
+{
+  "resolution": "Keep validate_publisher_root(app), then read manifest with encoding=\"utf-8\". One adjacent-line conflict resolved explicitly.",
+  "runs": [
+    {
+      "case": "integration-encoding",
+      "returncode": 0,
+      "summary": [
+        "Ran 4 tests in 0.043s",
+        "OK"
+      ]
+    },
+    {
+      "case": "integration-publishing",
+      "returncode": 0,
+      "summary": [
+        "Ran 16 tests in 0.696s",
+        "OK (skipped=3)"
+      ]
+    }
+  ]
+}

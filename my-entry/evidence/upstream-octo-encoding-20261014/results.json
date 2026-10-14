@@ -1,0 +1,59 @@
+{
+  "base": "d0344682df7c52ae5a79055f20f148f542d115e0",
+  "head": "a65199ff95d289743c22cf4cfb107009dc36e226",
+  "platform": "win32",
+  "python": "3.12.10",
+  "runs": [
+    {
+      "case": "encoding-red",
+      "returncode": 1,
+      "summary": [
+        "Ran 4 tests in 0.039s",
+        "FAILED (failures=1, errors=3)"
+      ],
+      "errors": [
+        "test_check_reads_unicode_listing_without_restamping_signed_bytes (test_octo_encoding.BundleEncoding.test_check_reads_unicode_listing_without_restamping_signed_bytes)",
+        "test_new_preserves_unicode_source_and_lf_bytes (test_octo_encoding.BundleEncoding.test_new_preserves_unicode_source_and_lf_bytes)",
+        "test_publish_reads_unicode_manifest_and_installs_only_once (test_octo_encoding.BundleEncoding.test_publish_reads_unicode_manifest_and_installs_only_once)",
+        "test_run_still_refuses_unicode_signed_manifest_before_startup (test_octo_encoding.BundleEncoding.test_run_still_refuses_unicode_signed_manifest_before_startup)"
+      ]
+    },
+    {
+      "case": "encoding-green",
+      "returncode": 0,
+      "summary": [
+        "Ran 4 tests in 0.034s",
+        "OK"
+      ],
+      "errors": []
+    },
+    {
+      "case": "cli-baseline",
+      "returncode": 1,
+      "summary": [
+        "Ran 39 tests in 1.456s",
+        "FAILED (failures=2, skipped=6)"
+      ],
+      "errors": [
+        "test_a_crate_without_its_lockfile_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_crate_without_its_lockfile_stops_the_release)",
+        "test_a_local_sdk_path_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_local_sdk_path_stops_the_release)"
+      ]
+    },
+    {
+      "case": "cli-fixed",
+      "returncode": 1,
+      "summary": [
+        "Ran 39 tests in 1.357s",
+        "FAILED (failures=2, skipped=6)"
+      ],
+      "errors": [
+        "test_a_crate_without_its_lockfile_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_crate_without_its_lockfile_stops_the_release)",
+        "test_a_local_sdk_path_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_local_sdk_path_stops_the_release)"
+      ]
+    }
+  ],
+  "cli_unchanged": [
+    "test_a_crate_without_its_lockfile_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_crate_without_its_lockfile_stops_the_release)",
+    "test_a_local_sdk_path_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_local_sdk_path_stops_the_release)"
+  ]
+}

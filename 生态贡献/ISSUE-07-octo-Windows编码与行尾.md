@@ -30,3 +30,20 @@ python -X utf8 -m unittest discover -s tools -p test_octo_encoding.py -v
 - [固定版本复核脚本](../tools/verify_ecosystem.py)
 
 本轮未编译或运行 Rust 宿主，也未声称端到端 UI 已验证。
+
+
+## 2026-10-14 正式上游提交补充
+
+已提交 [官方 App Flow PR #195](https://github.com/OctoSense-org/OctoSense-App-Flow/pull/195)，当前 OPEN，待维护者审阅合并。署名为共创队（晨报卡；报名 ID：小鞠老师），并链接项目仓库。团队原合并补丁保留，本次仅提交编码/行尾生产修复及测试，不重复编号。
+
+上游代码树 `d329dcb9596bb96958f18637f26cc64fcc4425d5` 与已测试本地提交 `a65199ff95d289743c22cf4cfb107009dc36e226` 一致；公开 head `cf48cff380a412f7f99a9730344127bf4beeafa2`。
+
+本次在固定源码导出的中文路径 fixture 中复核：4 项目标回归由 1 failure + 3 errors 变为全通过；同一修正 SDK 路径断言的 CLI 套件前后均为 39 项、2 个 release-shell fixture 失败和 6 个跳过，不声称完整套件全绿。实际运行 Windows / Python 3.12.10。此环境结论应与上文历史机器结果区分。
+
+与 #194 的独立补丁在 `cmd_publish_github` 有一处相邻代码冲突；已在临时 fixture 中明确保留目录检查，再按 UTF-8 读取 manifest。组合后编码 4 项通过，发布 16 项 `OK (skipped=3)`；三项 symlink 子用例因 Windows 权限跳过。上游先合并其中一条后，另一条需要按该已测试顺序重基。
+
+- [独立上游补丁](../my-entry/patches/app-flow-octo-utf8-lf-only.patch)
+- [复核结果](../my-entry/evidence/upstream-octo-encoding-20261014/results.json) / [组合验证](../my-entry/evidence/upstream-octo-encoding-20261014/integration.json)
+- [可复跑工具](../tools/verify_octo_encoding.py)：参数与 `verify_publisher_root.py` 相同，`--source` 指向该 PR checkout，`--scratch-root` 必须位于所有 Git 仓库之外。
+
+没有运行 Rust/GUI、真实 GitHub workflow、tag 或 release。
