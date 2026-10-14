@@ -1,0 +1,75 @@
+{
+  "base": "ffd5e4889a9a1f84fdc5213edefe64c36b4377a2",
+  "head": "68f1774c94fc1389a08b50007ca41f95643b946b",
+  "platform": "win32",
+  "python": "3.12.10",
+  "runs": [
+    {
+      "case": "target-red",
+      "returncode": 1,
+      "summary": [
+        "Ran 4 tests in 7.036s",
+        "FAILED (errors=3)"
+      ],
+      "errors": [
+        "test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request)",
+        "test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects)",
+        "test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout)"
+      ]
+    },
+    {
+      "case": "target-green",
+      "returncode": 0,
+      "summary": [
+        "Ran 4 tests in 7.602s",
+        "OK"
+      ],
+      "errors": []
+    },
+    {
+      "case": "suite-baseline",
+      "returncode": 1,
+      "summary": [
+        "Ran 20 tests in 25.035s",
+        "FAILED (errors=8)"
+      ],
+      "errors": [
+        "test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again)",
+        "test_applies_the_reviewed_patch_in_a_worktree (tools.test_setup.HubWorktrees.test_applies_the_reviewed_patch_in_a_worktree)",
+        "test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects)",
+        "test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout)",
+        "test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request)",
+        "test_applies_the_recorded_patch_and_check_is_read_only (tools.test_setup.RuntimeSources.test_applies_the_recorded_patch_and_check_is_read_only)",
+        "test_preserves_unstaged_changes (tools.test_setup.RuntimeSources.test_preserves_unstaged_changes)",
+        "test_rejects_additional_staged_changes (tools.test_setup.RuntimeSources.test_rejects_additional_staged_changes)"
+      ]
+    },
+    {
+      "case": "suite-fixed",
+      "returncode": 1,
+      "summary": [
+        "Ran 20 tests in 25.497s",
+        "FAILED (errors=5)"
+      ],
+      "errors": [
+        "test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again)",
+        "test_applies_the_reviewed_patch_in_a_worktree (tools.test_setup.HubWorktrees.test_applies_the_reviewed_patch_in_a_worktree)",
+        "test_applies_the_recorded_patch_and_check_is_read_only (tools.test_setup.RuntimeSources.test_applies_the_recorded_patch_and_check_is_read_only)",
+        "test_preserves_unstaged_changes (tools.test_setup.RuntimeSources.test_preserves_unstaged_changes)",
+        "test_rejects_additional_staged_changes (tools.test_setup.RuntimeSources.test_rejects_additional_staged_changes)"
+      ]
+    }
+  ],
+  "fixed_errors": [
+    "test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects)",
+    "test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout)",
+    "test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request)"
+  ],
+  "unchanged_errors": [
+    "test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again)",
+    "test_applies_the_recorded_patch_and_check_is_read_only (tools.test_setup.RuntimeSources.test_applies_the_recorded_patch_and_check_is_read_only)",
+    "test_applies_the_reviewed_patch_in_a_worktree (tools.test_setup.HubWorktrees.test_applies_the_reviewed_patch_in_a_worktree)",
+    "test_preserves_unstaged_changes (tools.test_setup.RuntimeSources.test_preserves_unstaged_changes)",
+    "test_rejects_additional_staged_changes (tools.test_setup.RuntimeSources.test_rejects_additional_staged_changes)"
+  ]
+}

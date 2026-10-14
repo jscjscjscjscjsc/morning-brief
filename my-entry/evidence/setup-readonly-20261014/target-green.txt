@@ -1,0 +1,9 @@
+test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request) ... ok
+test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects) ... ok
+test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout) ... ok
+test_conversion_preserves_local_work (tools.test_setup.HubWorktrees.test_conversion_preserves_local_work) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 7.602s
+
+OK
