@@ -7,7 +7,20 @@
 - 队伍：**共创**　ID：**小鞠老师**　赛道：**信息类 / 新闻场景**
 - 报名帖：https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5
 
+## 宣传片（先看这个）
+
+[![晨报卡 · 真实演示宣传片（2 分 9 秒）](promo/vB_real_demo_cover.png)](promo/vB_real_demo_1080p.mp4)
+
+- **vB · 真实演示版（2 分 9 秒 / 1080p，2026-10-14）** → [点封面或这里直接看](promo/vB_real_demo_1080p.mp4)
+  全部画面来自本地 card-host 原生界面真实录制；片中头版与阅读页来自 10/14 的真实一期日报 —— 80 条原始条目 → 16 条候选 → 三位编辑（技术 / 行业 / 读者）背靠背独立评审 → 主编终审选出 7 条。
+- **vA · 破晓 · 编辑部叙事版（75 秒 / 720p，2026-10-13）** → [打开](promo/vA_poxiao_narrative.mp4)
+  纯代码生成（Python + ffmpeg + numpy 合成音乐）的叙事短片，用于赛事 issue 提交。
+
+两版的制作说明、真实录制口径与"未逐项演示的功能"诚实清单，见 [`promo/README.md`](promo/README.md)。
+
 **第 46 轮生态修复（2026-10-14）**：修复发布工具在嵌套目录假成功、Windows UTF-8/LF 和 Git worktree 恢复问题。[中文介绍与报告](生态贡献/README.md) · [可应用补丁](my-entry/patches/README.md) · [前后验证证据](my-entry/evidence/ecosystem-20261014/README.md) · [本轮交接](进度交接_第46轮后.md)。
+
+**官方生态贡献 · Script VM 修复（2026-10-14）**：晨报卡开发过程中定位并修复了官方 Script VM 的栈失衡 bug（`if { for } else` 分支交接值缺失导致 `pop_stack_value on empty stack`、`on_render` 输出被静默丢弃），已向官方提修复 PR：[OctoSense-org/makepad#126](https://github.com/OctoSense-org/makepad/pull/126)（修复 issue [OctoSense-org/OctoSense#492](https://github.com/OctoSense-org/OctoSense/issues/492)）。修复把 `if`/`elif`/`else`、`match`、`try`/`catch` 的全部"无值分支"纳入覆盖，附 8 组回归测试。
 
 ## 现在能做到什么
 
@@ -81,15 +94,18 @@ python tools\brace.py                                       # main.splash 语法
 ## 仓库与推送（本机注意）
 
 - 仓库地址：https://github.com/jscjscjscjscjsc/morning-brief （public）
-- 本机到 `github.com:443` 的 HTTPS 被阻断，且 `~/.gitconfig` 里的本地代理 `127.0.0.1:7899` 已失效，因此**推送走 SSH**：
+- 直连 `github.com:443` 会被阻断；本地代理 `127.0.0.1:7899` 已失效。本机可用的推送通道（2026-10-14 实测）：
 
 ```powershell
-# 远端已配置为 ssh://git@ssh.github.com:443/jscjscjscjscjsc/morning-brief.git
+# 通道一：HTTPS 走本机常驻代理（fetch / push 均可，推荐）
+git -c http.proxy=http://127.0.0.1:7892 -c https.proxy=http://127.0.0.1:7892 push
+
+# 通道二：SSH 443（远端配成 ssh://git@ssh.github.com:443/jscjscjscjscjsc/morning-brief.git）
 $env:GIT_SSH_COMMAND='"C:/Windows/System32/OpenSSH/ssh.exe" -o StrictHostKeyChecking=no'
 git push
 ```
 
-- 若想恢复 HTTPS 推送：启动本地代理后 `git config --global http.https://github.com.proxy http://127.0.0.1:7899`，或把该行删掉改用直连。
+- GitHub 网页侧操作（issue / PR / 评论）走 `gh` CLI 不受影响。
 ## 目录结构
 
 | 路径 | 说明 |
@@ -98,6 +114,7 @@ git push
 | `my-entry/morning-brief/media/` | 开屏配乐 wav（**在 bundle 之外**：hub 准入不许 bundle 里出现音频扩展名） |
 | `my-entry/morning-brief/bundle/listing.json` | 卡片上架信息（副标题、关键词、截图、发布者） |
 | `my-entry/evidence/` | 每一步的实机截图（验收证据） |
+| `promo/` | 两版宣传片（vB 真实演示版 / vA 叙事版）+ 封面与说明 |
 | `项目复盘/` | 每轮进化复盘（外行话术，能看懂"这轮到底变好了什么"） |
 | `进度交接_第45轮后.md` | **交接文档**：新同学/新对话看这一个文件就能接着干 |
 | `00`–`07` 开头的 Markdown | 比赛策略、分工、实操指南、跑通实录、官方仓库下载说明 |
