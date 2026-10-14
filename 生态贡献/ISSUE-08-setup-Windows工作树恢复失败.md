@@ -1,5 +1,39 @@
 # ISSUE-08：setup 无法恢复 Windows 残留 worktree 注册
 
+## 第二条上游提交（2026-10-14）
+
+团队此前的修复已重新在上游 `ffd5e4889a9a1f84fdc5213edefe64c36b4377a2` 上复核并提交 [OctoSense PR #541](https://github.com/OctoSense-org/OctoSense/pull/541)，当前待维护者审阅。本轮不作为新发现重复编号，也未包含上一条 #540 的只读对象生产代码。
+
+上游提交 `2792c2b99b33067799ffaa9710c87c484556543d` 的代码树为 `b72ab45ea0411a6409c9834bba08cac7ed5236a8`，与本地已验证提交 `93db8aef3819316cb17a37f55a867edba914774e` 完全一致。仅修改上游 `tools/setup.py`、`tools/test_setup.py`：保留团队的 UTF-8 解码、NUL 路径记录、`Path.resolve()` 比较，以及 Windows 可运行的 fixture 清理；新增锁定 worktree 不被强制清理的回归测试。
+
+本轮实测 Windows / Python 3.12.10，使用临时本地 Git fixture：
+
+| 检查 | 同一套用例的基线 | 本条修复后 |
+|---|---|---|
+| 普通残留注册、中文空格路径、关闭 Python UTF-8 模式、锁定注册保护，4 项 | 2 个错误 + 1 个失败；锁定保护通过 | 4 项通过 |
+| 完整 setup 套件，21 项 | 7 个错误 + 1 个失败 | 5 个错误 |
+
+剩余五个错误在前后是同一组：四项 CRLF 补丁 fixture 问题和一项只读 clone 清理问题（独立 PR #540 修复）。两条 PR 的代码用 `git merge-tree` 无冲突组合，组合后的 **8 项目标测试全部通过**。不宣称完整 setup 套件全绿。
+
+`tools/setup.py --check --cargo` 已尝试，在缺少预先准备的 `.sources/octoscript-makepad` 处停止；未下载完整依赖，未执行 Rust、GUI、ROM 或模型服务测试。真实开发目录、源码 pins、用户修改及运行时二进制未改变。
+
+- [本轮结果](../my-entry/evidence/setup-worktree-upstream-20261014/results.json)
+- [目标红测试](../my-entry/evidence/setup-worktree-upstream-20261014/target-red.txt) / [目标绿测试](../my-entry/evidence/setup-worktree-upstream-20261014/target-green.txt)
+- [完整基线](../my-entry/evidence/setup-worktree-upstream-20261014/suite-baseline.txt) / [完整修复后](../my-entry/evidence/setup-worktree-upstream-20261014/suite-fixed.txt)
+- [两条 PR 组合验证](../my-entry/evidence/setup-worktree-upstream-20261014/integration.json) / [组合日志](../my-entry/evidence/setup-worktree-upstream-20261014/integration.txt)
+- [上游提交版补丁](../my-entry/patches/octosense-setup-worktree-upstream.patch) / [本轮复核工具](../tools/verify_setup_worktree.py)
+
+实际运行的复核命令中，`<patched-checkout>` 代表持有上述固定提交的本机目录：
+
+```powershell
+python -X utf8 tools/verify_setup_worktree.py --source <patched-checkout> --out my-entry/evidence/setup-worktree-upstream-20261014
+python -X utf8 tools/verify_setup_worktree.py --source <patched-checkout> --out my-entry/evidence/setup-worktree-upstream-20261014 --integration-tree acb79aa7f4c703af33aee332cdd8b499cbfd851f
+```
+
+第二个命令要求源 checkout 的 Git 对象库中持有两条修复组合得到的该 tree。日志已脱敏。本条提交后停止，不自动开始第三条。
+
+## 原团队修复记录（保留历史验证数字）
+
 2026-10-14，第 46 轮。基线 OctoSense commit `ffd5e4889a9a1f84fdc5213edefe64c36b4377a2`。
 
 ## 复现与影响

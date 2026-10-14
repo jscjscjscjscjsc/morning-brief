@@ -1,0 +1,13 @@
+test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again) ... ok
+test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again) ... ok
+test_git_paths_are_utf8_when_python_utf8_mode_is_disabled (tools.test_setup.HubWorktrees.test_git_paths_are_utf8_when_python_utf8_mode_is_disabled) ... ok
+test_recovery_does_not_force_prune_a_locked_worktree (tools.test_setup.HubWorktrees.test_recovery_does_not_force_prune_a_locked_worktree) ... ok
+test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request) ... ok
+test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects) ... ok
+test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout) ... ok
+test_conversion_preserves_local_work (tools.test_setup.HubWorktrees.test_conversion_preserves_local_work) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 13.975s
+
+OK
