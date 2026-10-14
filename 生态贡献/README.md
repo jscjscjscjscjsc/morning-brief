@@ -10,11 +10,11 @@
 |---|---|---|---|
 | [ISSUE-10](ISSUE-10-AppHub迁移误删应用数据.md) | App Hub `adopt_legacy_install` | 全新安装的应用保存普通 `bundle` 数据目录后，扫描/打开会误删；旧迁移也会误动同名用户数据 | 已修复并保存补丁；真实安装布局 20 项通过，三包准入完整测试 350 项通过（包含前述 20 项）；[证据与边界](../my-entry/evidence/hub-migration-20261014/README.md)，未提交官方上游 |
 | [ISSUE-09](ISSUE-09-setup-只读Git对象导致转换失败.md) | OctoSense `tools/setup.py` | Windows 只读 Git 对象使 clone 转 worktree 的完成清理与失败回滚报 `WinError 5` | 已提交 [上游 PR #540](https://github.com/OctoSense-org/OctoSense/pull/540)；目标 4 项通过；完整套件由 8 错降到 5 错，详见记录 |
-| [ISSUE-06](ISSUE-06-publish-github-嵌套目录假成功.md) | App Flow `tools/octo` 发布流程 | 晨报卡应用在 `my-entry/morning-brief`；生成器将该目录当仓库根，写入 GitHub 不读取的嵌套 workflow 目录，并仍使用根目录 bundle 模板 | 已修复；发布回归 16 项 OK（3 个既有子用例 skip） |
+| [ISSUE-06](ISSUE-06-publish-github-嵌套目录假成功.md) | App Flow `tools/octo` 发布流程 | 晨报卡应用在 `my-entry/morning-brief`；生成器将该目录当仓库根，写入 GitHub 不读取的嵌套 workflow 目录，并仍使用根目录 bundle 模板 | 目录检查已独立提交 [上游 PR #194](https://github.com/OctoSense-org/OctoSense-App-Flow/pull/194)；发布 16 项 `OK (skipped=3)`，更广 CLI 既有失败记录在报告 |
 | [ISSUE-07](ISSUE-07-octo-Windows编码与行尾.md) | App Flow `tools/octo` | 文本 I/O 依赖 Windows 默认编码，写入时还可能转换行尾，影响 UTF-8 源码与 bundle 字节 | 已修复；4 项编码回归通过 |
 | [ISSUE-08](ISSUE-08-setup-Windows工作树恢复失败.md) | OctoSense `tools/setup.py` | 残留 worktree 注册识别失败，中文路径解码受默认编码影响 | 团队补丁已提交 [上游 PR #541](https://github.com/OctoSense-org/OctoSense/pull/541)；4 项目标回归通过，与 #540 组合后 8 项通过，完整套件仍有 5 个既有错误 |
 
-这些问题服务于晨报卡的实际开发与发布路径。贡献是否完成、哪些用例通过，以对应报告的命令和输出为准；本索引不以报告数量代替效果证据。ISSUE-08、ISSUE-09 已提交上游 PR，ISSUE-06、ISSUE-07 保持各自报告记录的提交状态。
+这些问题服务于晨报卡的实际开发与发布路径。贡献是否完成、哪些用例通过，以对应报告的命令和输出为准；本索引不以报告数量代替效果证据。ISSUE-06、ISSUE-08、ISSUE-09 已独立提交上游 PR；ISSUE-07 编码修复保持本地团队补丁状态。
 
 ## 历史报告的当前状态
 

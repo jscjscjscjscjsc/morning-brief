@@ -1,0 +1,71 @@
+{
+  "base": "d0344682df7c52ae5a79055f20f148f542d115e0",
+  "head": "542eceeba5f27d47846444bc0e9232de24255fd2",
+  "platform": "win32",
+  "python": "3.12.10",
+  "runs": [
+    {
+      "case": "publish-red",
+      "returncode": 1,
+      "summary": [
+        "Ran 16 tests in 0.722s",
+        "FAILED (failures=4, skipped=3)"
+      ],
+      "errors": [
+        "test_nested_app_in_linked_worktree_is_rejected (test_github_publish.PublishingSetup.test_nested_app_in_linked_worktree_is_rejected)",
+        "test_nested_app_is_rejected_before_workflow_writes (test_github_publish.PublishingSetup.test_nested_app_is_rejected_before_workflow_writes) (replace=False)",
+        "test_nested_app_is_rejected_before_workflow_writes (test_github_publish.PublishingSetup.test_nested_app_is_rejected_before_workflow_writes) (replace=True)",
+        "test_new_nested_app_is_rejected_before_destination_creation (test_github_publish.PublishingSetup.test_new_nested_app_is_rejected_before_destination_creation)"
+      ]
+    },
+    {
+      "case": "publish-green",
+      "returncode": 0,
+      "summary": [
+        "Ran 16 tests in 0.737s",
+        "OK (skipped=3)"
+      ],
+      "errors": []
+    },
+    {
+      "case": "cli-baseline",
+      "returncode": 1,
+      "summary": [
+        "Ran 39 tests in 1.359s",
+        "FAILED (failures=3, errors=3, skipped=6)"
+      ],
+      "errors": [
+        "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('pulldown-cmark', 'comrak', 'markdown'))",
+        "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('feed-rs', 'rss', 'atom_syndication'))",
+        "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('async-openai', 'genai', 'ollama-rs', 'openai-api-rs'))",
+        "test_a_crate_without_its_lockfile_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_crate_without_its_lockfile_stops_the_release)",
+        "test_a_local_sdk_path_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_local_sdk_path_stops_the_release)",
+        "test_new_writes_the_template_with_the_sdk_by_path_or_commit (test_octo.WasmCommands.test_new_writes_the_template_with_the_sdk_by_path_or_commit)"
+      ]
+    },
+    {
+      "case": "cli-fixed",
+      "returncode": 1,
+      "summary": [
+        "Ran 39 tests in 1.271s",
+        "FAILED (failures=3, errors=3, skipped=6)"
+      ],
+      "errors": [
+        "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('pulldown-cmark', 'comrak', 'markdown'))",
+        "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('feed-rs', 'rss', 'atom_syndication'))",
+        "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('async-openai', 'genai', 'ollama-rs', 'openai-api-rs'))",
+        "test_a_crate_without_its_lockfile_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_crate_without_its_lockfile_stops_the_release)",
+        "test_a_local_sdk_path_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_local_sdk_path_stops_the_release)",
+        "test_new_writes_the_template_with_the_sdk_by_path_or_commit (test_octo.WasmCommands.test_new_writes_the_template_with_the_sdk_by_path_or_commit)"
+      ]
+    }
+  ],
+  "cli_unchanged": [
+    "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('pulldown-cmark', 'comrak', 'markdown'))",
+    "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('feed-rs', 'rss', 'atom_syndication'))",
+    "test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('async-openai', 'genai', 'ollama-rs', 'openai-api-rs'))",
+    "test_a_crate_without_its_lockfile_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_crate_without_its_lockfile_stops_the_release)",
+    "test_a_local_sdk_path_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_local_sdk_path_stops_the_release)",
+    "test_new_writes_the_template_with_the_sdk_by_path_or_commit (test_octo.WasmCommands.test_new_writes_the_template_with_the_sdk_by_path_or_commit)"
+  ]
+}

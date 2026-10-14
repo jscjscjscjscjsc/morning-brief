@@ -1,0 +1,15 @@
+Exit: 0
+
+Exit: 0
+0 broken, 0 pending
+
+Exit: 0
+octo doctor  (repo <FIXTURE>)
+  [ok]   python 3.12.10
+  [ok]   App Hub checkout <HOME>\Desktop\数据文件\黑客松比赛项目\OctoSense-App-Hub
+  [ok]   hub: <FIXTURE>\hub-latest\release\hub.exe  (from $OCTO_HUB)
+  [ok]   card-host: <FIXTURE>\octosense-hub\release\card-host.exe  (from $OCTO_CARD_HOST)
+  [ok]   cargo: C:\cargo-home\bin\cargo.EXE
+  [ok]   template templates\script-app
+
+ready: tools/octo new <dir> --platform <target> && tools/octo run <dir>/bundle

@@ -1,0 +1,116 @@
+test_the_list_follows_normal_dependencies_and_never_enters_a_proc_macro (test_octo.CrateList.test_the_list_follows_normal_dependencies_and_never_enters_a_proc_macro) ... ok
+test_the_list_is_one_custom_section_at_the_very_end (test_octo.CrateList.test_the_list_is_one_custom_section_at_the_very_end) ... ok
+test_check_exposes_and_forwards_catalog_and_publisher_keys (test_octo.Onboarding.test_check_exposes_and_forwards_catalog_and_publisher_keys) ... ok
+test_check_says_how_to_capture_a_screenshot_the_listing_names (test_octo.Onboarding.test_check_says_how_to_capture_a_screenshot_the_listing_names) ... ok
+test_platform_must_be_explicit_and_known (test_octo.Onboarding.test_platform_must_be_explicit_and_known) ... ok
+test_platforms_replace_template_and_deduplicate (test_octo.Onboarding.test_platforms_replace_template_and_deduplicate) ... ok
+test_reserved_ids_and_namespaces_leave_no_partial_project (test_octo.Onboarding.test_reserved_ids_and_namespaces_leave_no_partial_project) ... ok
+test_reserved_names_match_available_hub_contract (test_octo.Onboarding.test_reserved_names_match_available_hub_contract) ... skipped 'Set OCTOSENSE_APP_HUB to check contract parity'
+test_system_prefix_needs_explicit_escape (test_octo.Onboarding.test_system_prefix_needs_explicit_escape) ... ok
+test_wasm_call_runs_octosenses_example_on_the_built_component (test_octo.Onboarding.test_wasm_call_runs_octosenses_example_on_the_built_component) ... ok
+test_windows_executables_found_in_candidate_directory_before_path (test_octo.Onboarding.test_windows_executables_found_in_candidate_directory_before_path) ... ok
+test_windows_rejects_wrong_hub_before_path_fallback (test_octo.Onboarding.test_windows_rejects_wrong_hub_before_path_fallback) ... ok
+test_a_crate_without_its_lockfile_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_crate_without_its_lockfile_stops_the_release) ... FAIL
+test_a_local_sdk_path_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_local_sdk_path_stops_the_release) ... FAIL
+test_the_release_records_the_crates_octo_records (test_octo.ReleaseBuildsComponents.test_the_release_records_the_crates_octo_records) ... skipped 'needs cargo and the wasm32-wasip2 target, on PATH'
+test_build_adds_net_for_http_and_never_a_host (test_octo.WasmCommands.test_build_adds_net_for_http_and_never_a_host) ... ok
+test_build_copies_the_component_and_declares_what_it_needs (test_octo.WasmCommands.test_build_copies_the_component_and_declares_what_it_needs) ... ok
+test_build_refuses_a_core_module (test_octo.WasmCommands.test_build_refuses_a_core_module) ... ok
+test_build_refuses_imports_no_host_gives_and_leaves_the_bundle_alone (test_octo.WasmCommands.test_build_refuses_imports_no_host_gives_and_leaves_the_bundle_alone) ... ok
+test_build_sockets_requires_a_compatible_host_and_discloses_network (test_octo.WasmCommands.test_build_sockets_requires_a_compatible_host_and_discloses_network) ... ok
+test_build_takes_host_services_with_no_grant_of_their_own (test_octo.WasmCommands.test_build_takes_host_services_with_no_grant_of_their_own) ... ok
+test_conflicting_socket_abi_refuses_before_changing_the_bundle (test_octo.WasmCommands.test_conflicting_socket_abi_refuses_before_changing_the_bundle) ... ok
+test_doctor_names_dependencies_that_do_not_build_or_run (test_octo.WasmCommands.test_doctor_names_dependencies_that_do_not_build_or_run) ... ok
+test_doctor_warns_about_socket_crates_instead_of_refusing_their_names (test_octo.WasmCommands.test_doctor_warns_about_socket_crates_instead_of_refusing_their_names) ... ok
+test_info_reads_a_file_without_a_hub (test_octo.WasmCommands.test_info_reads_a_file_without_a_hub) ... ok
+test_new_refuses_names_that_cannot_be_a_crate_and_a_file (test_octo.WasmCommands.test_new_refuses_names_that_cannot_be_a_crate_and_a_file) ... ok
+test_new_then_build_with_cargo_makes_a_working_bundle (test_octo.WasmCommands.test_new_then_build_with_cargo_makes_a_working_bundle) ... skipped 'needs cargo and the wasm32-wasip2 target (rustup target add wasm32-wasip2)'
+test_new_writes_the_template_with_the_sdk_by_path_or_commit (test_octo.WasmCommands.test_new_writes_the_template_with_the_sdk_by_path_or_commit) ... FAIL
+test_sdk_commit_is_on_app_flow_s_main_and_has_the_sdk (test_octo.WasmCommands.test_sdk_commit_is_on_app_flow_s_main_and_has_the_sdk) ... ok
+test_socket_requirements_preserve_other_apis_and_promote_optional_support (test_octo.WasmCommands.test_socket_requirements_preserve_other_apis_and_promote_optional_support) ... ok
+test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) ... 
+  test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('pulldown-cmark', 'comrak', 'markdown')) ... ERROR
+  test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('feed-rs', 'rss', 'atom_syndication')) ... ERROR
+  test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('async-openai', 'genai', 'ollama-rs', 'openai-api-rs')) ... ERROR
+test_a_component_s_imports_and_typed_exports (test_octo.WasmReader.test_a_component_s_imports_and_typed_exports) ... ok
+test_a_core_module_s_imports_and_exports (test_octo.WasmReader.test_a_core_module_s_imports_and_exports) ... ok
+test_anything_else_is_refused_by_name (test_octo.WasmReader.test_anything_else_is_refused_by_name) ... ok
+test_built_components_read_as_hub_component_info_reads_them (test_octo.WasmReader.test_built_components_read_as_hub_component_info_reads_them) ... skipped 'build sdk/rust first: cargo test --locked --workspace'
+test_built_phase_3_examples_import_only_what_they_call (test_octo.WasmReader.test_built_phase_3_examples_import_only_what_they_call) ... skipped 'build sdk/rust first: cargo test --locked --workspace'
+test_built_std_net_example_has_socket_imports_and_typed_exports (test_octo.WasmReader.test_built_std_net_example_has_socket_imports_and_typed_exports) ... skipped 'build sdk/rust first: cargo test --locked --workspace'
+test_import_packages_include_sockets_but_not_similarly_named_packages (test_octo.WasmReader.test_import_packages_include_sockets_but_not_similarly_named_packages) ... ok
+test_the_reach_line_is_app_hub_s (test_octo.WasmReader.test_the_reach_line_is_app_hub_s) ... ok
+
+======================================================================
+ERROR: test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('pulldown-cmark', 'comrak', 'markdown'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo.py", line 664, in test_what_octosense_provides_cites_a_doc_section_store_apps_may_use
+    source = (HERE.parent / path).read_text(encoding='utf-8')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '<FIXTURE>\\docs\\SCRIPT-API.md'
+
+======================================================================
+ERROR: test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('feed-rs', 'rss', 'atom_syndication'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo.py", line 664, in test_what_octosense_provides_cites_a_doc_section_store_apps_may_use
+    source = (HERE.parent / path).read_text(encoding='utf-8')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '<FIXTURE>\\docs\\SCRIPT-API.md'
+
+======================================================================
+ERROR: test_what_octosense_provides_cites_a_doc_section_store_apps_may_use (test_octo.WasmCommands.test_what_octosense_provides_cites_a_doc_section_store_apps_may_use) (crates=('async-openai', 'genai', 'ollama-rs', 'openai-api-rs'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo.py", line 664, in test_what_octosense_provides_cites_a_doc_section_store_apps_may_use
+    source = (HERE.parent / path).read_text(encoding='utf-8')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '<FIXTURE>\\docs\\AI-SERVICES.md'
+
+======================================================================
+FAIL: test_a_crate_without_its_lockfile_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_crate_without_its_lockfile_stops_the_release)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo.py", line 789, in test_a_crate_without_its_lockfile_stops_the_release
+    self.assertIn('has no Cargo.lock', run.stdout + run.stderr)
+AssertionError: 'has no Cargo.lock' not found in ''
+
+======================================================================
+FAIL: test_a_local_sdk_path_stops_the_release (test_octo.ReleaseBuildsComponents.test_a_local_sdk_path_stops_the_release)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo.py", line 783, in test_a_local_sdk_path_stops_the_release
+    self.assertIn('takes the SDK from a local path', run.stdout + run.stderr)
+AssertionError: 'takes the SDK from a local path' not found in ''
+
+======================================================================
+FAIL: test_new_writes_the_template_with_the_sdk_by_path_or_commit (test_octo.WasmCommands.test_new_writes_the_template_with_the_sdk_by_path_or_commit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo.py", line 435, in test_new_writes_the_template_with_the_sdk_by_path_or_commit
+    self.assertEqual((crate / path).resolve(), (HERE.parent / 'sdk/rust/octosense-component').resolve())
+AssertionError: Windo[40 chars]proof-e7d78akq/flow /u4e2d/u6587/sdk/rust/octosense-component') != Windo[40 chars]proof-e7d78akq/flow 中文/sdk/rust/octosense-component')
+
+----------------------------------------------------------------------
+Ran 39 tests in 1.271s
+
+FAILED (failures=3, errors=3, skipped=6)
