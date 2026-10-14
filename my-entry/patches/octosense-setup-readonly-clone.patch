@@ -1,0 +1,103 @@
+diff --git a/tools/setup.py b/tools/setup.py
+index d1da298d..c4aa15c6 100644
+--- a/tools/setup.py
++++ b/tools/setup.py
+@@ -43,6 +43,7 @@ import os
+ from pathlib import Path
+ import re
+ import shutil
++import stat
+ import subprocess
+ import sys
+ 
+@@ -179,6 +180,25 @@ def owned_state(path, overlay):
+     return None
+ 
+ 
++def remove_conversion_tree(path):
++    """Remove a conversion's temporary tree, including Windows read-only objects."""
++    def retry_readonly_file(action, filename, error):
++        failure = error[1]
++        if os.name != "nt" or action is not os.unlink or not isinstance(failure, PermissionError):
++            raise failure
++        mode = os.stat(filename, follow_symlinks=False).st_mode
++        if not stat.S_ISREG(mode) or mode & stat.S_IWRITE:
++            raise failure
++        # Git's loose objects are read-only on Windows. Only clear that
++        # attribute on a regular file the conversion already owns; locked
++        # files, directories and other permission errors must still fail.
++        os.chmod(filename, mode | stat.S_IWRITE)
++        action(filename)
++
++    # onerror keeps this compatible with Python versions before 3.12.
++    shutil.rmtree(path, onerror=retry_readonly_file)
++
++
+ def convert_clone(hub, path, name, overlay, args):
+     """Replace a clean standalone clone with a worktree of the hub at the same commit."""
+     reason = owned_state(path, overlay)
+@@ -203,11 +223,11 @@ def convert_clone(hub, path, name, overlay, args):
+         add_worktree(hub, path, name, head, args)
+     except Exception:
+         if path.exists():
+-            shutil.rmtree(path)
++            remove_conversion_tree(path)
+         git(hub, "worktree", "prune")
+         aside.rename(path)
+         raise
+-    shutil.rmtree(aside)
++    remove_conversion_tree(aside)
+     note(f"converted the clone at {path} into a worktree of {hub}")
+ 
+ 
+diff --git a/tools/test_setup.py b/tools/test_setup.py
+index 8c7cc896..5b231c0e 100644
+--- a/tools/test_setup.py
++++ b/tools/test_setup.py
+@@ -5,6 +5,7 @@ import importlib.util
+ import io
+ import json
+ import os
++import stat
+ from pathlib import Path
+ import subprocess
+ import tempfile
+@@ -272,6 +273,38 @@ class HubWorktrees(unittest.TestCase):
+         self.assertTrue((self.path / ".git").is_dir())
+         self.assertEqual((self.path / "notes.txt").read_text(), "mine\n")
+ 
++    @unittest.skipUnless(os.name == "nt", "Windows enforces the read-only file attribute on deletion")
++    def test_conversion_removes_readonly_git_objects(self):
++        self.prepare()
++        objects = [p for p in (self.path / ".git" / "objects").glob("*/*") if p.is_file()]
++        self.assertTrue(objects, "the fixture must contain real loose Git objects")
++        for obj in objects:
++            obj.chmod(stat.S_IREAD)
++        self.args.hub, self.args.convert = str(self.hubs), True
++        self.prepare()
++        self.assert_worktree_of_hub(self.commits[0])
++        self.assertEqual(list(self.root.iterdir()), [self.path])
++        self.assertEqual(run("-C", str(self.hub), "cat-file", "-t", self.commits[0]), "commit")
++
++    def test_failed_conversion_restores_the_original_clone_after_partial_checkout(self):
++        self.prepare()
++        original = run("-C", str(self.path), "rev-parse", "HEAD")
++        self.args.hub, self.args.convert = str(self.hubs), True
++
++        def fail_after_creating_files(*args):
++            self.path.mkdir(parents=True)
++            partial = self.path / "partial.txt"
++            partial.write_text("unfinished checkout\n")
++            partial.chmod(stat.S_IREAD)
++            raise RuntimeError("checkout interrupted")
++
++        with patch.object(native, "add_worktree", side_effect=fail_after_creating_files):
++            with self.assertRaisesRegex(RuntimeError, "checkout interrupted"):
++                self.prepare()
++        self.assertTrue((self.path / ".git").is_dir())
++        self.assertEqual(run("-C", str(self.path), "rev-parse", "HEAD"), original)
++        self.assertEqual(list(self.root.iterdir()), [self.path])
++
+     def test_remove_worktrees_keeps_local_work_and_clones(self):
+         self.args.hub = str(self.hubs)
+         self.prepare()

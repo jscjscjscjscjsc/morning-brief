@@ -1,0 +1,191 @@
+test_a_missing_hub_is_an_error_not_a_clone (tools.test_setup.HubWorktrees.test_a_missing_hub_is_an_error_not_a_clone) ... ok
+test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again) ... ERROR
+test_applies_the_reviewed_patch_in_a_worktree (tools.test_setup.HubWorktrees.test_applies_the_reviewed_patch_in_a_worktree) ... ERROR
+test_check_creates_nothing (tools.test_setup.HubWorktrees.test_check_creates_nothing) ... ok
+test_conversion_preserves_local_work (tools.test_setup.HubWorktrees.test_conversion_preserves_local_work) ... ok
+test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects) ... ERROR
+test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout) ... ERROR
+test_fetches_a_new_pin_into_the_hub_without_making_it_shallow (tools.test_setup.HubWorktrees.test_fetches_a_new_pin_into_the_hub_without_making_it_shallow) ... ok
+test_hub_directory_from_the_environment (tools.test_setup.HubWorktrees.test_hub_directory_from_the_environment) ... ok
+test_per_source_environment_and_config_file (tools.test_setup.HubWorktrees.test_per_source_environment_and_config_file) ... ok
+test_rejects_a_hub_of_another_repository (tools.test_setup.HubWorktrees.test_rejects_a_hub_of_another_repository) ... ok
+test_remove_worktrees_keeps_local_work_and_clones (tools.test_setup.HubWorktrees.test_remove_worktrees_keeps_local_work_and_clones) ... ok
+test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request) ... ERROR
+test_update_moves_the_worktree (tools.test_setup.HubWorktrees.test_update_moves_the_worktree) ... ok
+test_without_a_hub_it_still_clones (tools.test_setup.HubWorktrees.test_without_a_hub_it_still_clones) ... ok
+test_applies_the_recorded_patch_and_check_is_read_only (tools.test_setup.RuntimeSources.test_applies_the_recorded_patch_and_check_is_read_only) ... ERROR
+test_check_requires_the_patch_without_applying_it (tools.test_setup.RuntimeSources.test_check_requires_the_patch_without_applying_it) ... ok
+test_preserves_unstaged_changes (tools.test_setup.RuntimeSources.test_preserves_unstaged_changes) ... ERROR
+test_rejects_additional_staged_changes (tools.test_setup.RuntimeSources.test_rejects_additional_staged_changes) ... ERROR
+test_rejects_modified_patch_bytes (tools.test_setup.RuntimeSources.test_rejects_modified_patch_bytes) ... ok
+
+======================================================================
+ERROR: test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 240, in test_a_stale_registration_does_not_block_adding_again
+    subprocess.check_call(["rm", "-rf", str(self.path)])
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 408, in check_call
+    retcode = call(*popenargs, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 389, in call
+    with Popen(*popenargs, **kwargs) as p:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] 系统找不到指定的文件。
+
+======================================================================
+ERROR: test_applies_the_reviewed_patch_in_a_worktree (tools.test_setup.HubWorktrees.test_applies_the_reviewed_patch_in_a_worktree)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 227, in test_applies_the_reviewed_patch_in_a_worktree
+    self.prepare(overlay)
+  File "<FIXTURE>\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 292, in prepare_source
+    git(path, "apply", "--index", str(patch))
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: error: patch failed: policy.txt:1
+error: policy.txt: patch does not apply
+
+======================================================================
+ERROR: test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 284, in test_conversion_removes_readonly_git_objects
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 254, in prepare_source
+    check_hub(root, name, spec, args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 230, in check_hub
+    convert_clone(hub, path, name, overlay, args)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 210, in convert_clone
+    shutil.rmtree(aside)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 5] 拒绝访问。: '<HOME>\\AppData\\Local\\Temp\\tmpw5cjulf2\\product\\.sources\\.makepad.converting\\.git\\objects\\4b\\825dc642cb6eb9a060e54bf8d69288fbee4904'
+
+======================================================================
+ERROR: test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 203, in convert_clone
+    add_worktree(hub, path, name, head, args)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1204, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<FIXTURE>\tools\test_setup.py", line 299, in fail_after_creating_files
+    raise RuntimeError("checkout interrupted")
+RuntimeError: checkout interrupted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 303, in test_failed_conversion_restores_the_original_clone_after_partial_checkout
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 254, in prepare_source
+    check_hub(root, name, spec, args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 230, in check_hub
+    convert_clone(hub, path, name, overlay, args)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 206, in convert_clone
+    shutil.rmtree(path)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 5] 拒绝访问。: '<HOME>\\AppData\\Local\\Temp\\tmp9cthwd_o\\product\\.sources\\makepad\\partial.txt'
+
+======================================================================
+ERROR: test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 263, in test_reports_an_existing_clone_and_converts_it_on_request
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 254, in prepare_source
+    check_hub(root, name, spec, args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 230, in check_hub
+    convert_clone(hub, path, name, overlay, args)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 210, in convert_clone
+    shutil.rmtree(aside)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 5] 拒绝访问。: '<HOME>\\AppData\\Local\\Temp\\tmpd8l23m6s\\product\\.sources\\.makepad.converting\\.git\\objects\\4b\\825dc642cb6eb9a060e54bf8d69288fbee4904'
+
+======================================================================
+ERROR: test_applies_the_recorded_patch_and_check_is_read_only (tools.test_setup.RuntimeSources.test_applies_the_recorded_patch_and_check_is_read_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 67, in test_applies_the_recorded_patch_and_check_is_read_only
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 64, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, self.overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 292, in prepare_source
+    git(path, "apply", "--index", str(patch))
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: error: patch failed: policy.txt:1
+error: policy.txt: patch does not apply
+
+======================================================================
+ERROR: test_preserves_unstaged_changes (tools.test_setup.RuntimeSources.test_preserves_unstaged_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 81, in test_preserves_unstaged_changes
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 64, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, self.overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 292, in prepare_source
+    git(path, "apply", "--index", str(patch))
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: error: patch failed: policy.txt:1
+error: policy.txt: patch does not apply
+
+======================================================================
+ERROR: test_rejects_additional_staged_changes (tools.test_setup.RuntimeSources.test_rejects_additional_staged_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 88, in test_rejects_additional_staged_changes
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 64, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, self.overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 292, in prepare_source
+    git(path, "apply", "--index", str(patch))
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 67, in git
+    raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed in {path}")
+RuntimeError: error: patch failed: policy.txt:1
+error: policy.txt: patch does not apply
+
+----------------------------------------------------------------------
+Ran 20 tests in 25.035s
+
+FAILED (errors=8)

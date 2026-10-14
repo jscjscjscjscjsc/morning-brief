@@ -1,0 +1,96 @@
+test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request) ... ERROR
+test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects) ... ERROR
+test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout) ... ERROR
+test_conversion_preserves_local_work (tools.test_setup.HubWorktrees.test_conversion_preserves_local_work) ... ok
+
+======================================================================
+ERROR: test_reports_an_existing_clone_and_converts_it_on_request (tools.test_setup.HubWorktrees.test_reports_an_existing_clone_and_converts_it_on_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 263, in test_reports_an_existing_clone_and_converts_it_on_request
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 254, in prepare_source
+    check_hub(root, name, spec, args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 230, in check_hub
+    convert_clone(hub, path, name, overlay, args)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 210, in convert_clone
+    shutil.rmtree(aside)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 5] 拒绝访问。: '<HOME>\\AppData\\Local\\Temp\\tmpsi1iy0s_\\product\\.sources\\.makepad.converting\\.git\\objects\\4b\\825dc642cb6eb9a060e54bf8d69288fbee4904'
+
+======================================================================
+ERROR: test_conversion_removes_readonly_git_objects (tools.test_setup.HubWorktrees.test_conversion_removes_readonly_git_objects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 284, in test_conversion_removes_readonly_git_objects
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 254, in prepare_source
+    check_hub(root, name, spec, args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 230, in check_hub
+    convert_clone(hub, path, name, overlay, args)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 210, in convert_clone
+    shutil.rmtree(aside)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 5] 拒绝访问。: '<HOME>\\AppData\\Local\\Temp\\tmpmqb3r897\\product\\.sources\\.makepad.converting\\.git\\objects\\4b\\825dc642cb6eb9a060e54bf8d69288fbee4904'
+
+======================================================================
+ERROR: test_failed_conversion_restores_the_original_clone_after_partial_checkout (tools.test_setup.HubWorktrees.test_failed_conversion_restores_the_original_clone_after_partial_checkout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 203, in convert_clone
+    add_worktree(hub, path, name, head, args)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1204, in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "<FIXTURE>\tools\test_setup.py", line 299, in fail_after_creating_files
+    raise RuntimeError("checkout interrupted")
+RuntimeError: checkout interrupted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_setup.py", line 303, in test_failed_conversion_restores_the_original_clone_after_partial_checkout
+    self.prepare()
+  File "<FIXTURE>\tools\test_setup.py", line 155, in prepare
+    native.prepare_source(self.root, "makepad", self.spec, self.args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 254, in prepare_source
+    check_hub(root, name, spec, args, overlay)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 230, in check_hub
+    convert_clone(hub, path, name, overlay, args)
+  File "<HOME>\AppData\Local\Temp\setup-readonly-proof-w5o60jra\tools\setup.py", line 206, in convert_clone
+    shutil.rmtree(path)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 5] 拒绝访问。: '<HOME>\\AppData\\Local\\Temp\\tmpcvmf7_uy\\product\\.sources\\makepad\\partial.txt'
+
+----------------------------------------------------------------------
+Ran 4 tests in 7.036s
+
+FAILED (errors=3)
