@@ -1,0 +1,9 @@
+test_check_reads_unicode_listing_without_restamping_signed_bytes (test_octo_encoding.BundleEncoding.test_check_reads_unicode_listing_without_restamping_signed_bytes) ... ok
+test_new_preserves_unicode_source_and_lf_bytes (test_octo_encoding.BundleEncoding.test_new_preserves_unicode_source_and_lf_bytes) ... ok
+test_publish_reads_unicode_manifest_and_installs_only_once (test_octo_encoding.BundleEncoding.test_publish_reads_unicode_manifest_and_installs_only_once) ... ok
+test_run_still_refuses_unicode_signed_manifest_before_startup (test_octo_encoding.BundleEncoding.test_run_still_refuses_unicode_signed_manifest_before_startup) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.043s
+
+OK

@@ -1,0 +1,72 @@
+test_check_reads_unicode_listing_without_restamping_signed_bytes (test_octo_encoding.BundleEncoding.test_check_reads_unicode_listing_without_restamping_signed_bytes) ... ERROR
+test_new_preserves_unicode_source_and_lf_bytes (test_octo_encoding.BundleEncoding.test_new_preserves_unicode_source_and_lf_bytes) ... ERROR
+test_publish_reads_unicode_manifest_and_installs_only_once (test_octo_encoding.BundleEncoding.test_publish_reads_unicode_manifest_and_installs_only_once) ... octo: 'gbk' codec can't decode byte 0xa6 in position 49: illegal multibyte sequence
+ERROR
+test_run_still_refuses_unicode_signed_manifest_before_startup (test_octo_encoding.BundleEncoding.test_run_still_refuses_unicode_signed_manifest_before_startup) ... FAIL
+
+======================================================================
+ERROR: test_check_reads_unicode_listing_without_restamping_signed_bytes (test_octo_encoding.BundleEncoding.test_check_reads_unicode_listing_without_restamping_signed_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo_encoding.py", line 102, in test_check_reads_unicode_listing_without_restamping_signed_bytes
+    self.assertEqual(octo.cmd_check(args, []), 0)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<FIXTURE>\tools\octo", line 546, in cmd_check
+    manifest = json.loads((bundle / "manifest.json").read_text())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1028, in read_text
+    return f.read()
+           ^^^^^^^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xa6 in position 49: illegal multibyte sequence
+
+======================================================================
+ERROR: test_new_preserves_unicode_source_and_lf_bytes (test_octo_encoding.BundleEncoding.test_new_preserves_unicode_source_and_lf_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo_encoding.py", line 63, in test_new_preserves_unicode_source_and_lf_bytes
+    self.assertEqual(octo.cmd_new(args), 0)
+                     ^^^^^^^^^^^^^^^^^^
+  File "<FIXTURE>\tools\octo", line 289, in cmd_new
+    main.write_text(main.read_text().replace('text: "My Notes"', "text: " + json.dumps(name), 1))
+                    ^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1028, in read_text
+    return f.read()
+           ^^^^^^^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xa6 in position 25: illegal multibyte sequence
+
+======================================================================
+ERROR: test_publish_reads_unicode_manifest_and_installs_only_once (test_octo_encoding.BundleEncoding.test_publish_reads_unicode_manifest_and_installs_only_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\octo", line 593, in cmd_publish_github
+    manifest = json.loads(manifest_path.read_text())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<HOME>\AppData\Local\Programs\Python\Python312\Lib\pathlib.py", line 1028, in read_text
+    return f.read()
+           ^^^^^^^^
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xa6 in position 49: illegal multibyte sequence
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo_encoding.py", line 82, in test_publish_reads_unicode_manifest_and_installs_only_once
+    self.assertEqual(octo.cmd_publish_github(args), 0)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<FIXTURE>\tools\octo", line 599, in cmd_publish_github
+    die(str(error))
+  File "<FIXTURE>\tools\octo", line 190, in die
+    sys.exit(code)
+SystemExit: 1
+
+======================================================================
+FAIL: test_run_still_refuses_unicode_signed_manifest_before_startup (test_octo_encoding.BundleEncoding.test_run_still_refuses_unicode_signed_manifest_before_startup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<FIXTURE>\tools\test_octo_encoding.py", line 114, in test_run_still_refuses_unicode_signed_manifest_before_startup
+    self.assertIn('cannot run a sealed release', error.getvalue())
+AssertionError: 'cannot run a sealed release' not found in "octo: 'gbk' codec can't decode byte 0xa6 in position 49: illegal multibyte sequence\n"
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.039s
+
+FAILED (failures=1, errors=3)
