@@ -1,0 +1,9 @@
+test_a_stale_registration_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_does_not_block_adding_again) ... ok
+test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again (tools.test_setup.HubWorktrees.test_a_stale_registration_with_unicode_and_spaces_does_not_block_adding_again) ... ok
+test_git_paths_are_utf8_when_python_utf8_mode_is_disabled (tools.test_setup.HubWorktrees.test_git_paths_are_utf8_when_python_utf8_mode_is_disabled) ... ok
+test_recovery_does_not_force_prune_a_locked_worktree (tools.test_setup.HubWorktrees.test_recovery_does_not_force_prune_a_locked_worktree) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 6.082s
+
+OK
